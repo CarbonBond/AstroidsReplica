@@ -7,7 +7,8 @@ import SDL "vendor:sdl2"
 //Constants
 WINDOW_FLAGS :: SDL.WINDOW_SHOWN + SDL.WINDOW_BORDERLESS
 RENDER_FLAGS :: SDL.RENDERER_ACCELERATED
-TARGET_DT :: 1000 / 60
+FPS          :: 60
+TARGET_DT    :: 1000 / FPS
 
 Game :: struct {
   perf_frequency: f64,
@@ -44,19 +45,16 @@ main :: proc() {
   assert(render != nil, SDL.GetErrorString())
   defer SDL.DestroyRenderer(game.renderer)
 
-  game.perf_frequency = f64(SDL.GetPerformanceFrequency())
-  start : f64
-  end   : f64
-
   event : SDL.Event
   state : [^]u8
 
   game.is_running = true
+  prevTime : u32 = 0;
 
   game_loop : for game.is_running {
 
     process_input(&event)
-    update()
+    update(&prevTime)
     render()
 
   }
@@ -78,7 +76,12 @@ process_input :: proc(event: ^SDL.Event) {
       
   }
 }
-update :: proc(){
+update :: proc(prevTime: ^u32){
+  waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
+  prevTime := prevTime
+  if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
+  defer prevTime^ = SDL.GetTicks()
+
 }
 render :: proc() {
 }
