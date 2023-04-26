@@ -3,6 +3,15 @@ import "core:math"
 import "core:mem"
 import SDL "vendor:sdl2"
 
+
+View :: struct {
+  window: ^SDL.Window,
+  height: int,
+  width: int
+  color_buffer: ^u32, 
+  color_buffer_texture: ^SDL.Texture,
+}
+
 draw_pixel :: proc(x: int, y: int, color: u32, view: View) {
   if y >= 0 && y < view.height && x >= 0 && x < view.width {
     location := mem.ptr_offset(view.color_buffer,(y*view.width) + x)

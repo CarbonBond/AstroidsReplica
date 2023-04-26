@@ -19,14 +19,6 @@ Game :: struct {
   is_running: bool,
 }
 
-View :: struct {
-  window: ^SDL.Window,
-  height: int,
-  width: int
-  color_buffer: ^u32, 
-  color_buffer_texture: ^SDL.Texture,
-}
-
 game := Game{}
 
 main :: proc() {
@@ -49,7 +41,7 @@ main :: proc() {
     cast(i32)game.view.height,
     WINDOW_FLAGS
   )
-  assert(game.view.window != nil, SDL.GetErrorString())
+  assert(game.view.window != nil, SDL.GetErrorString()) 
   defer SDL.DestroyWindow(game.view.window)
 
   game.renderer = SDL.CreateRenderer( game.view.window, -1, RENDER_FLAGS)
@@ -119,6 +111,8 @@ setup :: proc() {
     cast(i32)game.view.width,
     cast(i32)game.view.height
   )
+
+  load_image("./media/placeholder.png", Image.PNG)
 
 }
 
