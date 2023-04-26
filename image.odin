@@ -3,11 +3,12 @@ package main
 import "core:os"
 import "core:fmt"
 import "core:strings"
+import "core:mem"
 
-Bitmap :: struct {
-  height: i32 
-  width: i32
-  data: rawptr
+Image :: struct {
+  height: u32 
+  width: u32
+  data: ^u32
 }
 
 ImagePNG :: struct {
@@ -20,23 +21,23 @@ ImagePNG :: struct {
   interlace_method: u8
 }
 
-Image :: enum {
+ImageType :: enum {
   BMP,
   PNG
 }
 
 
-load_image :: proc(file: string, type: Image) -> (data: rawptr) {
+load_image :: proc(file: string, type: ImageType) -> (img: Image) {
   switch type {
     case .BMP:
-      data = load_bmp(file);
+      img = load_bmp(file);
     case .PNG:
-      data = load_png(file);
+      img = load_png(file);
   }
   return;
 }
 
-load_png :: proc(file: string) -> (data: rawptr) {
+load_png :: proc(file: string) -> (img: Image) {
   handle, err := os.open(file, os.O_RDONLY, 0)
   assert(err == os.ERROR_NONE, "Failed to open bmp")
 
@@ -68,7 +69,6 @@ load_png :: proc(file: string) -> (data: rawptr) {
 
     length := (i32(chunkLength[0]) << 24) | (i32(chunkLength[1]) << 16) | 
               (i32(chunkLength[2]) << 8) | i32(chunkLength[3]) 
-    fmt.println(length)
 
     name := strings.clone_from_bytes(chunkName)
     defer delete(name)
@@ -83,6 +83,10 @@ load_png :: proc(file: string) -> (data: rawptr) {
                   (u32(data[2]) << 8) | u32(data[3]) 
         png.height = (u32(data[4]) << 24) | (u32(data[5]) << 16) | 
                   (u32(data[6]) << 8) | u32(data[7]) 
+        img.width = png.width
+        img.height = img.height
+        img.data = cast(^u32)mem.alloc(int(img.width) * int(img.height) * size_of(u32))
+
         png.bit_depth = data[8]
         png.color_type = data[9]
         png.comp_method = data[10]
@@ -92,9 +96,7 @@ load_png :: proc(file: string) -> (data: rawptr) {
       case "IDAT":
       case "IEND":
         readingFile = false
-
       case:
-        fmt.println(name)
     }
 
     chunkCRC:= []u8{0,0,0,0}
@@ -106,7 +108,7 @@ load_png :: proc(file: string) -> (data: rawptr) {
   return
 }
 
-load_bmp :: proc(file: string) -> (data: rawptr) {
+load_bmp :: proc(file: string) -> (img: Image) {
   assert(true == false, "BMP load not implemented.")
   handle, err := os.open(file, os.O_RDONLY, 0)
   assert(err == os.ERROR_NONE, "Failed to open bmp")
