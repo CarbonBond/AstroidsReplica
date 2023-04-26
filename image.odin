@@ -55,9 +55,11 @@ load_png :: proc(file: string) -> (data: rawptr) {
            "Opened file is not a PNG") 
   }
 
-  chunkName := dataArray[:4]
-  chunkLength := dataArray[4:8] 
-  for {
+  chunkName := []u8{0,0,0,0}
+  chunkLength := []u8{0,0,0,0} 
+
+  readingFile := true
+  for readingFile {
     read, err := os.read(handle, chunkLength) 
     assert(read == len(chunkLength), "Didn't read enough bytes")
 
@@ -66,16 +68,17 @@ load_png :: proc(file: string) -> (data: rawptr) {
 
     length := (i32(chunkLength[0]) << 24) | (i32(chunkLength[1]) << 16) | 
               (i32(chunkLength[2]) << 8) | i32(chunkLength[3]) 
+    fmt.println(length)
 
     name := strings.clone_from_bytes(chunkName)
     defer delete(name)
 
+    data := dataArray[:length]
+    read, err = os.read(handle, data[:]) 
+    assert(read == len(data), "Didn't read enough bytes")
+
     switch name {
       case "IHDR":
-        data := dataArray[:length]
-        read, err = os.read(handle, data[:]) 
-        assert(read == len(data), "Didn't read enough bytes")
-
         png.width = (u32(data[0]) << 24) | (u32(data[1]) << 16) | 
                   (u32(data[2]) << 8) | u32(data[3]) 
         png.height = (u32(data[4]) << 24) | (u32(data[5]) << 16) | 
@@ -85,9 +88,19 @@ load_png :: proc(file: string) -> (data: rawptr) {
         png.comp_method = data[10]
         png.filter_method = data[11]
         png.interlace_method = data[12]
+      case "PLTE":
+      case "IDAT":
+      case "IEND":
+        readingFile = false
+
+      case:
+        fmt.println(name)
     }
 
-    break
+    chunkCRC:= []u8{0,0,0,0}
+    read, err = os.read(handle, chunkCRC ) 
+    assert(read == len(chunkCRC), "Didn't read enough bytes")
+
   }
 
   return
