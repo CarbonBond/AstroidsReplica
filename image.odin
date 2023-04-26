@@ -4,8 +4,12 @@ import "core:os"
 import "core:fmt"
 import "core:strings"
 import "core:mem"
+import BITS "core:math/bits"
 
 CHUNK_IHDR := make_u32_from_4_u8('I', 'H', 'D', 'R')
+CHUNK_IDAT := make_u32_from_4_u8('I', 'D', 'A', 'T')
+CHUNK_IEND := make_u32_from_4_u8('I', 'E', 'N', 'D')
+
 
 PNG_t :: struct {
   width        : u32
@@ -16,6 +20,7 @@ PNG_t :: struct {
   color_format : png_format
 
   buffer       : ^[]u8
+  size         : u32
 
   err          : png_error
   state        : png_state
@@ -79,7 +84,7 @@ png_FromFile :: proc(file: string) -> (png: ^PNG_t, err: png_error) {
 
   buffer, success := os.read_entire_file_from_filename(file)
   if success == false do err = .NOTFOUND
-  assert(success == false, "Failed to open bmp")
+  assert(success == true, "Failed to open png")
 
   png.source.buffer = buffer
   png.source.owning = true
@@ -94,7 +99,6 @@ png_FromFile :: proc(file: string) -> (png: ^PNG_t, err: png_error) {
 
 png_Decode :: proc(png: ^PNG_t) -> (err: png_error) {
   chunk : u32
-  compressed : ^u8
   inflated : ^u8
   compressed_size, compressed_index : u32 = 0, 0
   inflated_size : u32
@@ -113,7 +117,6 @@ png_Decode :: proc(png: ^PNG_t) -> (err: png_error) {
   chunk = 33
 
   for chunk < cast(u32)len(png.source.buffer) {
-    data : ^u8
 
     if chunk + 12 > cast(u32)len(png.source.buffer) {
       png.err = .MALFORMED
@@ -121,14 +124,146 @@ png_Decode :: proc(png: ^PNG_t) -> (err: png_error) {
     }
 
     length := make_u32_from_u8slice(png.source.buffer[chunk:chunk+4])
+    if length > BITS.I32_MAX {
+      png.err = .MALFORMED
+      return png.err
+    }
 
+    if chunk + 12 + length > cast(u32)len(png.source.buffer) {
+      png.err = .MALFORMED
+      return png.err
+    }
 
+    dataLocation := chunk + 8
+
+    if make_u32_from_u8slice(png.source.buffer[chunk+4: chunk+8]) == CHUNK_IDAT {
+      compressed_size += length
+    } else
+    if make_u32_from_u8slice(png.source.buffer[chunk+4: chunk+8]) == CHUNK_IEND {
+      break
+    } else
+    if (png.source.buffer[chunk+4] & 32) == 0 {
+      png.err = .UNSUPPORTED
+      return png.err
+    }
+
+    chunk += 12 + make_u32_from_u8slice(png.source.buffer[chunk:chunk+4])
 
   }
 
+  compressed := cast(^[]u8)mem.alloc(int(compressed_size));
+  defer free(compressed)
+  if compressed == nil {
+    png.err = .MEM
+    return png.err
+  }
+
+  chunk = 33
+  for chunk < cast(u32)len(png.source.buffer) {
+
+
+    length := make_u32_from_u8slice(png.source.buffer[chunk:chunk+4])
+    dataLocation := chunk + 8
+
+    if make_u32_from_u8slice(png.source.buffer[chunk+4: chunk+8]) == CHUNK_IDAT {
+      mem.copy(mem.ptr_offset(compressed, compressed_index),
+               &png.source.buffer[dataLocation],
+               int(length))
+      compressed_index += length
+    } else
+    if make_u32_from_u8slice(png.source.buffer[chunk+4: chunk+8]) == CHUNK_IEND {
+      break
+    }
+
+    chunk += 12 + make_u32_from_u8slice(png.source.buffer[chunk:chunk+4])
+
+  }
+
+  inflated_size = ((png.width * (png.height * png_get_bpp(png) + 7))/8) + png.height;
+  inflated = cast(^u8)(mem.alloc(int(inflated_size)))
+  defer free(inflated)
+  if inflated == nil {
+    png.err = .MEM
+    return png.err
+  }
+
+  error := png_inflate(png, inflated, inflated_size, compressed^, compressed_size)
+  if error != .SUCCESS {
+    return png.err;
+  }
+
+  png.size = (png.width * png.height * png_get_bpp(png) + 7) / 8;
+  png.buffer = cast(^[]u8)mem.alloc(int(png.size))
+  if png.buffer == nil {
+    png.size = 0
+    png.err = .MEM
+    return png.err
+  }
 
   return
 }
+
+png_inflate :: proc(png: ^PNG_t, 
+                    out: ^u8, outsize: u32, 
+                    inptr: []u8, insize: u32, 
+                    ) -> png_error {
+  if (insize < 2) {
+    png.err = .MALFORMED
+    return png.err
+  }
+
+  //TODO(Brandon): Program breaks here. Fix
+  fmt.println(png.err)
+  if (u32(inptr[0]) * 256 + u32(inptr[1]) % 31) != 0 {
+    png.err = .MALFORMED
+    return png.err
+  }
+
+  if ((inptr[0] & 15) != 8 || ((inptr[0] >> 4) & 15) > 7) {
+    png.err = .MALFORMED
+    return png.err
+  }
+
+  if (((inptr[1] >> 5) & 1) != 0) {
+    png.err = .MALFORMED
+    return png.err
+  }
+
+  png_inflate_data(png, out, outsize, inptr, insize, 2)
+
+  return png.err
+}
+
+png_inflate_data :: proc(png: ^PNG_t, 
+                         out: ^u8, outsize: u32, 
+                         inptr: []u8, insize: u32, 
+                         inpos: u32) -> png_error {
+  pos : u32
+  bp : u32
+  done : u8 = 0;
+
+  for done == 0 {
+    btype : u32
+
+    if ((bp >> 3) >= insize) {
+      png.err = .MALFORMED
+      return png.err
+    }
+
+    done = png_ReadBit(&bp, &inptr[inpos])
+    done = png_ReadBit(&bp, &inptr[inpos])
+    
+  }
+
+  return png.err
+}
+
+png_ReadBit :: proc(bitpointer: ^u32, stream: ^u8) -> u8 {
+  result : u8 = u8( (mem.ptr_offset(stream, ((bitpointer^) >> 3))^ >> ((bitpointer^) & 0x7)) & 1)
+  (bitpointer^) += 1
+  return result
+}
+
 
 png_ReadHeader :: proc(png : ^PNG_t){
   if png.err   != .SUCCESS do return
@@ -236,6 +371,24 @@ make_u32_from_4_u8 :: proc(a, b, c, d: u8) -> u32 {
   return u32(a << 24) | u32(b << 16) | u32(c << 8) | u32(d) 
 }
 
+png_get_bpp :: proc(png: ^PNG_t) -> u32 {
+  return png.color_depth * png_get_components(png)
+}
+
+png_get_components :: proc(png: ^PNG_t) -> u32 {
+  switch png.color_type {
+    case .LUM:
+      return 1
+    case .LUMA:
+      return 2
+    case .RGB:
+      return 3
+    case .RGBA:
+      return 4
+    case:
+      return 0
+  }
+}
 
 /*
 Image :: struct {

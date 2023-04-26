@@ -112,7 +112,12 @@ setup :: proc() {
     cast(i32)game.view.height
   )
 
-  load_image("./media/placeholder.png", ImageType.PNG)
+  //load_image("./media/placeholder.png", ImageType.PNG)
+  png, err := png_FromFile("./media/placeholder.png")
+  if png != nil {
+    err = png_Decode(png)
+    fmt.println(err)
+  }
 
 }
 
