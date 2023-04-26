@@ -2,7 +2,9 @@ package main
 
 // Imports
 import "core:fmt"
+import "core:mem"
 import SDL "vendor:sdl2"
+
 
 //Constants
 WINDOW_FLAGS :: SDL.WINDOW_SHOWN + SDL.WINDOW_BORDERLESS
@@ -13,7 +15,16 @@ TARGET_DT    :: 1000 / FPS
 Game :: struct {
   perf_frequency: f64,
   renderer: ^SDL.Renderer,
-  is_running: bool
+  view: View,
+  is_running: bool,
+}
+
+View :: struct {
+  window: ^SDL.Window,
+  height: int,
+  width: int
+  color_buffer: ^u32, 
+  color_buffer_texture: ^SDL.Texture,
 }
 
 game := Game{}
@@ -26,22 +37,22 @@ main :: proc() {
   display_mode : SDL.DisplayMode
   assert(SDL.GetCurrentDisplayMode(0, &display_mode) == 0, SDL.GetErrorString())
 
-  WINDOW_HEIGHT := display_mode.h
-  WINDOW_WIDTH := display_mode.w 
+  game.view.height = int(display_mode.h)
+  game.view.width  = int(display_mode.w)
 
 
-  window := SDL.CreateWindow(
+  game.view.window = SDL.CreateWindow(
     "Odin Astroids",
     SDL.WINDOWPOS_CENTERED,
     SDL.WINDOWPOS_CENTERED,
-    640,
-    480
+    cast(i32)game.view.width,
+    cast(i32)game.view.height,
     WINDOW_FLAGS
   )
-  assert(window != nil, SDL.GetErrorString())
-  defer SDL.DestroyWindow(window)
+  assert(game.view.window != nil, SDL.GetErrorString())
+  defer SDL.DestroyWindow(game.view.window)
 
-  game.renderer = SDL.CreateRenderer( window, -1, RENDER_FLAGS)
+  game.renderer = SDL.CreateRenderer( game.view.window, -1, RENDER_FLAGS)
   assert(render != nil, SDL.GetErrorString())
   defer SDL.DestroyRenderer(game.renderer)
 
@@ -50,6 +61,9 @@ main :: proc() {
 
   game.is_running = true
   prevTime : u32 = 0;
+
+  setup()
+  defer free(game.view.color_buffer)
 
   game_loop : for game.is_running {
 
@@ -84,4 +98,29 @@ update :: proc(prevTime: ^u32){
 
 }
 render :: proc() {
+
+  draw_rect(0, 0, game.view.width, game.view.height, 0xFF333333, game.view)
+
+  render_color_buffer(game.view, game.renderer)
+  clear_color_buffer(0xFFCCCC10, game.view)
+
+  SDL.RenderPresent(game.renderer)
 }
+
+
+setup :: proc() {
+  game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
+  assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
+
+  game.view.color_buffer_texture = SDL.CreateTexture(
+    game.renderer,
+    372645892,
+    SDL.TextureAccess.STREAMING,
+    cast(i32)game.view.width,
+    cast(i32)game.view.height
+  )
+
+}
+
+
+
