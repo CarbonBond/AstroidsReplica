@@ -19,7 +19,15 @@ Game :: struct {
   is_running: bool,
 }
 
+
+Vertex :: struct {
+  x: int 
+  y: int 
+}
+
 game := Game{}
+
+astroid : Astroid
 
 main :: proc() {
 
@@ -91,16 +99,21 @@ update :: proc(prevTime: ^u32){
 }
 render :: proc() {
 
-  draw_rect(0, 0, game.view.width, game.view.height, 0xFF333333, game.view)
-
+  draw_astroid(&astroid, 0xFF99FF99, game.view)
   render_color_buffer(game.view, game.renderer)
-  clear_color_buffer(0xFFCCCC10, game.view)
+  clear_color_buffer(0xFF121212, game.view)
 
   SDL.RenderPresent(game.renderer)
 }
 
 
 setup :: proc() {
+  astroid.size = 3
+  astroid.width = 100 * 3
+  astroid.height = 100 * 3
+
+  astroid.vertices = {{50,50},{50,250}, {100, 225}, {250,201},{200,51}} 
+
   game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
   assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
 
@@ -111,13 +124,6 @@ setup :: proc() {
     cast(i32)game.view.width,
     cast(i32)game.view.height
   )
-
-  //load_image("./media/placeholder.png", ImageType.PNG)
-  png, err := png_FromFile("./media/placeholder.png")
-  if png != nil {
-    err = png_Decode(png)
-    fmt.println(err)
-  }
 
 }
 
