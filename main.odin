@@ -29,8 +29,8 @@ game := Game{}
 
 
 main :: proc() {
-  astroid := createAstroid();
-  defer free(astroid);
+  astroid := createAstroid()
+  defer destroyAstroid(astroid)
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
   defer SDL.Quit()
@@ -100,7 +100,14 @@ update :: proc(prevTime: ^u32){
 }
 render :: proc(astroid: ^Astroid) {
 
-  draw_astroid(astroid, 0xFF99FF99, game.view)
+  for i := 0; i < len(astroid.vertices)-1; i += 1 {
+    draw_line(astroid.vertices[i].x,astroid.vertices[i].y, 
+              astroid.vertices[i + 1].x, astroid.vertices[i + 1].y,
+              0xFF99FF99, game.view)
+  }
+  draw_line(astroid.vertices[0].x,astroid.vertices[0].y, 
+            astroid.vertices[len(astroid.vertices)-1].x, astroid.vertices[len(astroid.vertices)-1].y,
+            0xFF99FF99, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
 
