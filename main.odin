@@ -27,9 +27,10 @@ Vertex :: struct {
 
 game := Game{}
 
-astroid : Astroid
 
 main :: proc() {
+  astroid := createAstroid();
+  defer free(astroid);
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
   defer SDL.Quit()
@@ -69,7 +70,7 @@ main :: proc() {
 
     process_input(&event)
     update(&prevTime)
-    render()
+    render(astroid)
 
   }
 }
@@ -97,9 +98,9 @@ update :: proc(prevTime: ^u32){
   defer prevTime^ = SDL.GetTicks()
 
 }
-render :: proc() {
+render :: proc(astroid: ^Astroid) {
 
-  draw_astroid(&astroid, 0xFF99FF99, game.view)
+  draw_astroid(astroid, 0xFF99FF99, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
 
@@ -108,12 +109,6 @@ render :: proc() {
 
 
 setup :: proc() {
-  astroid.size = 3
-  astroid.width = 100 * 3
-  astroid.height = 100 * 3
-
-  astroid.vertices = {{50,50},{50,250}, {100, 225}, {250,201},{200,51}} 
-
   game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
   assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
 

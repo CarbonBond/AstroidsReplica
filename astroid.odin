@@ -7,16 +7,25 @@ Astroid :: struct {
   size: int 
   width: int
   height: int
-  vertices: [dynamic]Vertex
+  vertices: ^[dynamic]Vertex
 }
 
 createAstroid :: proc() -> (astroid: ^Astroid) {
   astroid = cast(^Astroid)mem.alloc(size_of(astroid))
   astroid.size = int(rand.float32() * 6) 
-  astroid.width = int(rand.float32() * 10) * astroid.size 
-  astroid.height = int(rand.float32() * 10) * astroid.size
-  astroid.vertices = {{0,0},{astroid.width, 0},{astroid.width, astroid.height}, {0, astroid.height}}
+  astroid.width = int(rand.float32() * 100) * astroid.size 
+  astroid.height = int(rand.float32() * 100) * astroid.size
+  astroid.vertices = new([dynamic]Vertex)
 
+  v : Vertex
+  v = {0, 0}
+  append(astroid.vertices, v)
+  v = {astroid.width, 0}
+  append(astroid.vertices, v)
+  v = {astroid.width, astroid.height}
+  append(astroid.vertices, v)
+  v = {0, astroid.height} 
+  append(astroid.vertices, v)
   return
 }
 
