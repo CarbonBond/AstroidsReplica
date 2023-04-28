@@ -4,7 +4,7 @@ package main
 import "core:fmt"
 import "core:mem"
 import SDL "vendor:sdl2"
-
+import rand "core:math/rand"
 
 //Constants
 WINDOW_FLAGS :: SDL.WINDOW_SHOWN + SDL.WINDOW_BORDERLESS
@@ -14,6 +14,7 @@ TARGET_DT    :: 1000 / FPS
 
 NEON_GREEN   :: 0xFFAAFFAA
 
+
 Game :: struct {
   perf_frequency: f64,
   renderer: ^SDL.Renderer,
@@ -21,16 +22,15 @@ Game :: struct {
   is_running: bool,
 }
 
-
-Vertex :: struct {
-  x: int 
-  y: int 
-}
+Vertex :: [2]f32
 
 game := Game{}
 
 
+
+
 main :: proc() {
+  rand.set_global_seed(0xFFFFFFFF)
   astroid := createAstroid()
   defer destroyAstroid(astroid)
 

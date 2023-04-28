@@ -8,49 +8,47 @@ Astroid :: struct {
   size: int 
   width: int
   height: int
+  position: Vertex
   vertices: []Vertex
 }
 
-createAstroid :: proc(width := 100, height := 100, size:= 5) -> (astroid: ^Astroid ) {
-  astroid = cast(^Astroid)mem.alloc(size_of(astroid))
+createAstroid :: proc(width := 100, height := 100, size:= 3) ->  ^Astroid {
+  astroid := cast(^Astroid)mem.alloc(size_of(Astroid))
   astroid.size = int(size) 
-  astroid.width = int(rand.float32() * f32(height)) * astroid.size 
-  astroid.height = int(rand.float32() * f32(height)) * astroid.size
-  vertices := make([]Vertex, 8)
+  astroid.width = int(f32(height)) * astroid.size 
+  astroid.height = int( f32(height)) * astroid.size
+  astroid.vertices = make([]Vertex, 8)
   
   OneThirdWidth := f32(astroid.width) * 0.3  
   OneThirdHeight := f32(astroid.height) * 0.5  
 
   //Top left
-  vertices[0] = Vertex{int(rand.float32() * f32(astroid.width) * 0.3),
-                       int(rand.float32() * f32(astroid.height) * 0.3)}
+  astroid.vertices[0] = {rand.float32() * f32(astroid.width) * 0.3 ,
+                       rand.float32() * f32(astroid.height) * 0.3}
   //Top middle
-  vertices[1] = Vertex{int(rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth),
-                       int(rand.float32() * f32(astroid.height) * 0.3)}
+  astroid.vertices[1] = {rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth,
+                       rand.float32() * f32(astroid.height) * 0.3}
   //Top right
-  vertices[2] = Vertex{int(rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2)) ,
-                       int(rand.float32() * f32(astroid.height) * 0.3)}
+  astroid.vertices[2] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
+                       rand.float32() * f32(astroid.height) * 0.3}
   //Right middle
-  vertices[3] = Vertex{int(rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2)) ,
-                       int(rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight)}
+  astroid.vertices[3] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
+                       rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight}
   //Bottom right
-  vertices[4] = Vertex{int(rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2)) ,
-                       int(rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2))}
+  astroid.vertices[4] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
+                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
   //Bottom middle
-  vertices[5] = Vertex{int(rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth),
-                       int(rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2))}
+  astroid.vertices[5] = {rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth,
+                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
   //Bottom left
-  vertices[6] = Vertex{int(rand.float32() * f32(astroid.width) * 0.3),
-                       int(rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2))}
+  astroid.vertices[6] = {rand.float32() * f32(astroid.width) * 0.3,
+                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
   //Middle left
-  vertices[7] = Vertex{int(rand.float32() * f32(astroid.width) * 0.3),
-                       int(rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight)}
+  astroid.vertices[7] = {rand.float32() * f32(astroid.width) * 0.3,
+                       rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight}
 
-  astroid.vertices = vertices
-
-  fmt.println(astroid)
-
-  return
+  fmt.println(astroid.vertices)
+  return astroid
 }
 
 destroyAstroid :: proc(astroid: ^Astroid){
@@ -60,11 +58,11 @@ destroyAstroid :: proc(astroid: ^Astroid){
 
 draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {
   for i := 0; i < len(astroid.vertices)-1; i += 1 {
-    draw_line(astroid.vertices[i].x,astroid.vertices[i].y, 
-              astroid.vertices[i + 1].x, astroid.vertices[i + 1].y,
+    draw_line(cast(int)astroid.vertices[i][0],cast(int)astroid.vertices[i][1], 
+              cast(int)astroid.vertices[i + 1][0],cast(int) astroid.vertices[i + 1][1],
               color, view)
   }
-  draw_line(astroid.vertices[0].x,astroid.vertices[0].y, 
-            astroid.vertices[len(astroid.vertices)-1].x, astroid.vertices[len(astroid.vertices)-1].y,
+  draw_line(cast(int)astroid.vertices[0][0],cast(int)astroid.vertices[0][1], 
+            cast(int)astroid.vertices[len(astroid.vertices)-1][0], cast(int)astroid.vertices[len(astroid.vertices)-1][1],
             color, view)
 }
