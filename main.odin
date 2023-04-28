@@ -30,7 +30,7 @@ game := Game{}
 
 
 main :: proc() {
-  rand.set_global_seed(0xFFFFFFFF)
+  //rand.set_global_seed(0xFFFFFFFF)
   astroid := createAstroid()
   defer destroyAstroid(astroid)
 
@@ -102,6 +102,7 @@ update :: proc(prevTime: ^u32){
 }
 render :: proc(astroid: ^Astroid) {
 
+  astroid.position = {astroid.position[0] + 10, astroid.position[1] + 10} 
   draw_astroid(astroid, NEON_GREEN, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)

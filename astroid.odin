@@ -57,12 +57,17 @@ destroyAstroid :: proc(astroid: ^Astroid){
 }
 
 draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {
+  x1, x2, y1, y2 : int
   for i := 0; i < len(astroid.vertices)-1; i += 1 {
-    draw_line(cast(int)astroid.vertices[i][0],cast(int)astroid.vertices[i][1], 
-              cast(int)astroid.vertices[i + 1][0],cast(int) astroid.vertices[i + 1][1],
-              color, view)
+    x1 = int(astroid.vertices[i][0])   + int(astroid.position[0]) % view.width
+    y1 = int(astroid.vertices[i][1])   + int(astroid.position[1]) % view.height
+    x2 = int(astroid.vertices[i+1][0]) + int(astroid.position[0]) % view.width
+    y2 = int(astroid.vertices[i+1][1]) + int(astroid.position[1]) % view.height
+    draw_line(x1, y1, x2, y2, color, view)
   }
-  draw_line(cast(int)astroid.vertices[0][0],cast(int)astroid.vertices[0][1], 
-            cast(int)astroid.vertices[len(astroid.vertices)-1][0], cast(int)astroid.vertices[len(astroid.vertices)-1][1],
-            color, view)
+  x1 = int(astroid.vertices[0][0])   + int(astroid.position[0]) % view.width
+  y1 = int(astroid.vertices[0][1])   + int(astroid.position[1]) % view.height
+  x2 = int(astroid.vertices[len(astroid.vertices)-1][0]) + int(astroid.position[0]) % view.width
+  y2 = int(astroid.vertices[len(astroid.vertices)-1][1]) + int(astroid.position[1]) % view.height
+  draw_line(x1, y1, x2, y2, color, view)
 }
