@@ -26,12 +26,11 @@ Vertex :: [2]f32
 
 game := Game{}
 
-
-
+astroid : ^Astroid
 
 main :: proc() {
   //rand.set_global_seed(0xFFFFFFFF)
-  astroid := createAstroid()
+  astroid = createAstroid()
   defer destroyAstroid(astroid)
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
@@ -72,7 +71,7 @@ main :: proc() {
 
     process_input(&event)
     update(&prevTime)
-    render(astroid)
+    render()
 
   }
 }
@@ -99,10 +98,11 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-}
-render :: proc(astroid: ^Astroid) {
+  astroid.position = {f32(int(astroid.position[0] + 10) % game.view.width), f32(int(astroid.position[1] + 10) % game.view.height)}
 
-  astroid.position = {astroid.position[0] + 10, astroid.position[1] + 10} 
+}
+render :: proc() {
+
   draw_astroid(astroid, NEON_GREEN, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
