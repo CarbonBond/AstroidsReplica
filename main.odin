@@ -12,6 +12,8 @@ RENDER_FLAGS :: SDL.RENDERER_ACCELERATED
 FPS          :: 60
 TARGET_DT    :: 1000 / FPS
 
+NEON_GREEN   :: 0xFFAAFFAA
+
 Game :: struct {
   perf_frequency: f64,
   renderer: ^SDL.Renderer,
@@ -95,19 +97,12 @@ update :: proc(prevTime: ^u32){
   waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
   prevTime := prevTime
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
-  defer prevTime^ = SDL.GetTicks()
+  prevTime^ = SDL.GetTicks()
 
 }
 render :: proc(astroid: ^Astroid) {
 
-  for i := 0; i < len(astroid.vertices)-1; i += 1 {
-    draw_line(astroid.vertices[i].x,astroid.vertices[i].y, 
-              astroid.vertices[i + 1].x, astroid.vertices[i + 1].y,
-              0xFF99FF99, game.view)
-  }
-  draw_line(astroid.vertices[0].x,astroid.vertices[0].y, 
-            astroid.vertices[len(astroid.vertices)-1].x, astroid.vertices[len(astroid.vertices)-1].y,
-            0xFF99FF99, game.view)
+  draw_astroid(astroid, NEON_GREEN, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
 
