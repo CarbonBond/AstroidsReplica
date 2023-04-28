@@ -13,6 +13,7 @@ View :: struct {
 }
 
 draw_pixel :: proc(x: int, y: int, color: u32, view: View) {
+
   if y >= 0 && y < view.height && x >= 0 && x < view.width {
     location := mem.ptr_offset(view.color_buffer,(y*view.width) + x)
     location^ = color;

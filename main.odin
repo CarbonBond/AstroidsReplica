@@ -12,6 +12,8 @@ RENDER_FLAGS :: SDL.RENDERER_ACCELERATED
 FPS          :: 60
 TARGET_DT    :: 1000 / FPS
 
+RENDER_WRAP  :: true
+
 NEON_GREEN   :: 0xFFAAFFAA
 
 
@@ -98,7 +100,8 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  astroid.position = {f32(int(astroid.position[0] + 10) % game.view.width), f32(int(astroid.position[1] + 10) % game.view.height)}
+  astroid.position = {f32(int(astroid.position[0] + 10) % (game.view.width + astroid.width)),
+                      f32(int(astroid.position[1] + 10) % (game.view.height + astroid.height))}
 
 }
 render :: proc() {
