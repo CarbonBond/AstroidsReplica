@@ -4,7 +4,7 @@ Ship :: struct {
   position: Vertex
   size: f32
   turn: int
-  acceration: int
+  acceleration: int
   speed: int
 }
 

@@ -25,12 +25,13 @@ Game :: struct {
   is_running: bool,
 }
 
-Keypress :: struct {
-  up : int
-  down : int
-  tLeft : int
-  tRight : int
-  shoot : int
+Keypress :: [5]int
+Controls :: enum{
+  accelerate
+  decelerate
+  tLeft
+  tRight
+  shoot
 }
 
 Vertex :: [2]f32
@@ -45,7 +46,6 @@ astroid : ^Astroid
 main :: proc() {
   ship.size = 20
   ship.position = Vertex{500, 500}
-  ship.speed = 10
   //rand.set_global_seed(0xFFFFFFFF)
   astroid = createAstroid()
   defer destroyAstroid(astroid)
@@ -105,18 +105,14 @@ process_input :: proc(event: ^SDL.Event) {
       #partial switch event.key.keysym.scancode {
         case .ESCAPE:
           game.is_running = false
-        case .W:
-          keys.up = 1
           
       }
-    case SDL.EventType.KEYUP:
-      #partial switch event.key.keysym.scancode {
-        case .ESCAPE:
-          game.is_running = false
-        case .W:
-          keys.up = 0
-      }
   }
+
+  kb := SDL.GetKeyboardState(nil);
+  keys[Controls.accelerate] = int(kb[SDL.Scancode.W])
+  keys[Controls.decelerate] = int(kb[SDL.Scancode.S])
+
 }
 update :: proc(prevTime: ^u32){
   waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
@@ -126,7 +122,11 @@ update :: proc(prevTime: ^u32){
 
   astroid.position = {f32(int(astroid.position[0] + 10) % (game.view.width + astroid.width)),
                       f32(int(astroid.position[1] + 10) % (game.view.height + astroid.height))}
-  ship.position[0] += f32(ship.speed * keys.up)
+
+  ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
+  ship.speed = 10
+  ship.position[1] -= f32((ship.speed + ship.acceleration) * keys[Controls.accelerate])
+  ship.position[1] += f32(ship.speed * keys[Controls.decelerate])
   fmt.println(ship)
 }
 render :: proc() {
