@@ -15,6 +15,7 @@ TARGET_DT    :: 1000 / FPS
 RENDER_WRAP  :: true
 
 NEON_GREEN   :: 0xFFAAFFAA
+NEON_RED     :: 0xFFFFAAAA
 
 
 Game :: struct {
@@ -24,13 +25,27 @@ Game :: struct {
   is_running: bool,
 }
 
+Keypress :: struct {
+  up : int
+  down : int
+  tLeft : int
+  tRight : int
+  shoot : int
+}
+
 Vertex :: [2]f32
 
+ship : Ship
+
 game := Game{}
+keys := Keypress{}
 
 astroid : ^Astroid
 
 main :: proc() {
+  ship.size = 20
+  ship.position = Vertex{500, 500}
+  ship.speed = 10
   //rand.set_global_seed(0xFFFFFFFF)
   astroid = createAstroid()
   defer destroyAstroid(astroid)
@@ -90,8 +105,17 @@ process_input :: proc(event: ^SDL.Event) {
       #partial switch event.key.keysym.scancode {
         case .ESCAPE:
           game.is_running = false
-        }
-      
+        case .W:
+          keys.up = 1
+          
+      }
+    case SDL.EventType.KEYUP:
+      #partial switch event.key.keysym.scancode {
+        case .ESCAPE:
+          game.is_running = false
+        case .W:
+          keys.up = 0
+      }
   }
 }
 update :: proc(prevTime: ^u32){
@@ -102,11 +126,13 @@ update :: proc(prevTime: ^u32){
 
   astroid.position = {f32(int(astroid.position[0] + 10) % (game.view.width + astroid.width)),
                       f32(int(astroid.position[1] + 10) % (game.view.height + astroid.height))}
-
+  ship.position[0] += f32(ship.speed * keys.up)
+  fmt.println(ship)
 }
 render :: proc() {
 
-  draw_astroid(astroid, NEON_GREEN, game.view)
+  draw_astroid(astroid, NEON_RED, game.view)
+  draw_ship(&ship, NEON_GREEN, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
 
