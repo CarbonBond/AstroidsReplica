@@ -14,8 +14,15 @@ Astroid :: struct {
   world_vertices: []Vector2d
 }
 
-createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
+ASTROID_SCALE :: 100
 
+init_astroids :: proc(astroids: ^[dynamic]^Astroid, amount: int, view: View) {
+  for i := 0; i < amount; i += 1 {
+    append(astroids, createAstroid(view))
+  }
+}
+
+createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
   astroid := cast(^Astroid)mem.alloc(size_of(Astroid))
 
   {
@@ -32,11 +39,9 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
 
     if sign_x >= 50 {
       vx = -vx
-      px = -px
     }
     if sign_y >= 50 {
       vy = -vy
-      py = -py
     }
     
     astroid.position[0] = f32(px)
@@ -48,39 +53,39 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
   astroid.size = int(size) 
   astroid.vertices = make([]Vector2d, 8)
   astroid.world_vertices = make([]Vector2d, 8)
+  astroid.hit_radius = ASTROID_SCALE / 2
 
   // Creates random looking astroid
   {
     //Top left
-    astroid.vertices[0] = {rand.float32()* 0.3 ,
-                         rand.float32() * 0.3}
+    astroid.vertices[0] = {rand.float32()* 0.25 ,
+                         rand.float32() * 0.25}
     //Top middle
-    astroid.vertices[1] = {rand.float32() * 0.3 + 0.3,
-                         rand.float32() * 0.3}
+    astroid.vertices[1] = {rand.float32() * 0.25 + 0.25,
+                         rand.float32() * 0.25}
     //Top right
-    astroid.vertices[2] = {rand.float32() * 0.3 + 0.6 ,
-                         rand.float32() * 0.3}
+    astroid.vertices[2] = {rand.float32() * 0.25 + 0.75 ,
+                         rand.float32() * 0.25}
     //Right middle
-    astroid.vertices[3] = {rand.float32() * 0.3 + 0.6,
-                         rand.float32() * 0.3 + 0.3}
+    astroid.vertices[3] = {rand.float32() * 0.25 + 0.75,
+                         rand.float32() * 0.25 + 0.25}
     //Bottom right
-    astroid.vertices[4] = {rand.float32() * 0.3 + 0.6,
-                         rand.float32() * 0.3 + 0.6}
+    astroid.vertices[4] = {rand.float32() * 0.25 + 0.75,
+                         rand.float32() * 0.25 + 0.75}
     //Bottom middle
-    astroid.vertices[5] = {rand.float32() * 0.3 + 0.3,
-                         rand.float32() * 0.3 + 0.6}
+    astroid.vertices[5] = {rand.float32() * 0.25 + 0.25,
+                         rand.float32() * 0.25 + 0.75}
     //Bottom left
-    astroid.vertices[6] = {rand.float32() * 0.3,
-                         rand.float32() * 0.3 + 0.6}
+    astroid.vertices[6] = {rand.float32() * 0.25,
+                         rand.float32() * 0.25 + 0.75}
     //Middle left
-    astroid.vertices[7] = {rand.float32() * 0.3,
-                         rand.float32() * 0.3 + 0.3}
+    astroid.vertices[7] = {rand.float32() * 0.25,
+                         rand.float32() * 0.25 + 0.25}
 
     screenTranslation := Vector2d{f32(view.width/2), f32(view.height/2)}
     for i := 0; i < len(astroid.vertices); i += 1 {
-      astroid.vertices[i] = astroid.vertices[i] * 100
-      astroid.world_vertices[i] += astroid.vertices[i]
-      astroid.world_vertices[i] += astroid.vertices[i]
+      astroid.vertices[i] = astroid.vertices[i] * ASTROID_SCALE
+      astroid.world_vertices[i] += astroid.vertices[i] + screenTranslation
     }
 
   }
@@ -88,9 +93,35 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
   return astroid
 }
 
+destroy_astroids :: proc(astroids: ^[dynamic]^Astroid) {
+  for astroid in astroids {
+    destroyAstroid(astroid)
+  } 
+}
+
 destroyAstroid :: proc(astroid: ^Astroid){
   delete(astroid.vertices)
   free(astroid)
+}
+
+update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: View) {
+  for astroid in astroids {
+    fmt.println(astroid)
+    updateAstroid(astroid, view)
+  } 
+}
+updateAstroid :: proc(astroid: ^Astroid, view: View) {
+  screenTranslation := Vector2d{f32(view.width/2), f32(view.height/2)}
+  astroid.position += astroid.velocity 
+  for i := 0; i < len(astroid.vertices); i += 1 {
+    astroid.world_vertices[i] = astroid.vertices[i] + astroid.position + screenTranslation
+  }
+}
+
+draw_astroids :: proc(astroids: ^[dynamic]^Astroid, color : u32, view: View) {
+  for astroid in astroids {
+    draw_astroid(astroid, color, view)
+  } 
 }
 
 draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {

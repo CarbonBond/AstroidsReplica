@@ -23,6 +23,7 @@ Game :: struct {
   renderer: ^SDL.Renderer,
   view: View,
   is_running: bool,
+  astroids: [dynamic]^Astroid
 }
 
 Keypress :: [5]int
@@ -39,14 +40,10 @@ ship : Ship
 game := Game{}
 keys := Keypress{}
 
-astroid : ^Astroid
-
 main :: proc() {
   ship.size = 20
   ship.position = Vector2d{500, 500}
   //rand.set_global_seed(0xFFFFFFFF)
-  astroid = createAstroid(game.view)
-  defer destroyAstroid(astroid)
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
   defer SDL.Quit()
@@ -81,6 +78,7 @@ main :: proc() {
 
   setup()
   defer free(game.view.color_buffer)
+  defer destroy_astroids(&game.astroids)
 
   game_loop : for game.is_running {
 
@@ -110,7 +108,6 @@ process_input :: proc(event: ^SDL.Event) {
   kb := SDL.GetKeyboardState(nil);
   keys[Controls.accelerate] = int(kb[SDL.Scancode.W])
   keys[Controls.decelerate] = int(kb[SDL.Scancode.S])
-
 }
 update :: proc(prevTime: ^u32){
   waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
@@ -118,17 +115,17 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  astroid.position += astroid.velocity 
+  update_astroids(&game.astroids, game.view)
+
 
   ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
   ship.speed = 10
   ship.position[1] -= f32((ship.speed + ship.acceleration) * keys[Controls.accelerate])
   ship.position[1] += f32(ship.speed * keys[Controls.decelerate])
-  fmt.println(ship)
 }
 render :: proc() {
 
-  draw_astroid(astroid, NEON_RED, game.view)
+  draw_astroids(&game.astroids, NEON_RED, game.view)
   draw_ship(&ship, NEON_GREEN, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
@@ -140,6 +137,8 @@ render :: proc() {
 setup :: proc() {
   game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
   assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
+
+  init_astroids(&game.astroids, 3, game.view)
 
   game.view.color_buffer_texture = SDL.CreateTexture(
     game.renderer,
