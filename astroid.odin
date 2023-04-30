@@ -31,6 +31,7 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
     //Random location
     px := rand.float32() * f32(view.width)
     py := rand.float32() * f32(view.height)
+    fmt.println(px, " ", py)
 
     //Random Velocity
     vx := f32(int(rand.int31()) % 500) / 200;
@@ -81,14 +82,12 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
     astroid.vertices[7] = {rand.float32() * 0.25,
                          rand.float32() * 0.25 + 0.25}
 
-    screenTranslation := Vector2d{f32(view.width/2), f32(view.height/2)}
     for i := 0; i < len(astroid.vertices); i += 1 {
       astroid.vertices[i] = astroid.vertices[i] * ASTROID_SCALE
-      astroid.world_vertices[i] += astroid.vertices[i] + screenTranslation
+      astroid.world_vertices[i] += astroid.vertices[i] 
     }
 
   }
-
   return astroid
 }
 
@@ -105,15 +104,13 @@ destroyAstroid :: proc(astroid: ^Astroid){
 
 update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: View) {
   for astroid in astroids {
-    fmt.println(astroid)
     updateAstroid(astroid, view)
   } 
 }
 updateAstroid :: proc(astroid: ^Astroid, view: View) {
-  screenTranslation := Vector2d{f32(view.width/2), f32(view.height/2)}
   astroid.position += astroid.velocity 
   for i := 0; i < len(astroid.vertices); i += 1 {
-    astroid.world_vertices[i] = astroid.vertices[i] + astroid.position + screenTranslation
+    astroid.world_vertices[i] = astroid.vertices[i] + astroid.position 
   }
 }
 
@@ -126,15 +123,15 @@ draw_astroids :: proc(astroids: ^[dynamic]^Astroid, color : u32, view: View) {
 draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {
   x1, x2, y1, y2 : int
   for i := 0; i < len(astroid.world_vertices)-1; i += 1 {
-    x1 = int(astroid.world_vertices[i][0]   + astroid.position[0])
-    y1 = int(astroid.world_vertices[i][1]   + astroid.position[1])
-    x2 = int(astroid.world_vertices[i+1][0] + astroid.position[0])
-    y2 = int(astroid.world_vertices[i+1][1] + astroid.position[1])
+    x1 = int(astroid.world_vertices[i][0])
+    y1 = int(astroid.world_vertices[i][1])
+    x2 = int(astroid.world_vertices[i+1][0])
+    y2 = int(astroid.world_vertices[i+1][1])
     draw_line(x1, y1, x2, y2, color, view)
   }
-  x1 = int(astroid.world_vertices[0][0]   + astroid.position[0])
-  y1 = int(astroid.world_vertices[0][1]   + astroid.position[1])
-  x2 = int(astroid.world_vertices[len(astroid.vertices)-1][0] + astroid.position[0])
-  y2 = int(astroid.world_vertices[len(astroid.vertices)-1][1] + astroid.position[1])
+  x1 = int(astroid.world_vertices[0][0])
+  y1 = int(astroid.world_vertices[0][1])
+  x2 = int(astroid.world_vertices[len(astroid.vertices)-1][0])
+  y2 = int(astroid.world_vertices[len(astroid.vertices)-1][1])
   draw_line(x1, y1, x2, y2, color, view)
 }

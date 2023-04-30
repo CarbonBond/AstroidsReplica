@@ -17,6 +17,8 @@ RENDER_WRAP  :: true
 NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
 
+ASTROID_COUNT :: 4
+
 
 Game :: struct {
   perf_frequency: f64,
@@ -117,7 +119,6 @@ update :: proc(prevTime: ^u32){
 
   update_astroids(&game.astroids, game.view)
 
-
   ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
   ship.speed = 10
   ship.position[1] -= f32((ship.speed + ship.acceleration) * keys[Controls.accelerate])
@@ -125,8 +126,8 @@ update :: proc(prevTime: ^u32){
 }
 render :: proc() {
 
-  draw_astroids(&game.astroids, NEON_RED, game.view)
   draw_ship(&ship, NEON_GREEN, game.view)
+  draw_astroids(&game.astroids, NEON_RED, game.view)
   render_color_buffer(game.view, game.renderer)
   clear_color_buffer(0xFF121212, game.view)
 
@@ -138,7 +139,7 @@ setup :: proc() {
   game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
   assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
 
-  init_astroids(&game.astroids, 3, game.view)
+  init_astroids(&game.astroids, ASTROID_COUNT, game.view)
 
   game.view.color_buffer_texture = SDL.CreateTexture(
     game.renderer,
