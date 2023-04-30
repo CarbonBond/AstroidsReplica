@@ -45,7 +45,7 @@ main :: proc() {
   ship.size = 20
   ship.position = Vector2d{500, 500}
   //rand.set_global_seed(0xFFFFFFFF)
-  astroid = createAstroid()
+  astroid = createAstroid(game.view)
   defer destroyAstroid(astroid)
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
@@ -118,8 +118,7 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  astroid.position = {f32(int(astroid.position[0] + 10) % (game.view.width + astroid.width)),
-                      f32(int(astroid.position[1] + 10) % (game.view.height + astroid.height))}
+  astroid.position += astroid.velocity 
 
   ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
   ship.speed = 10

@@ -5,50 +5,86 @@ import "core:mem"
 import "core:fmt"
 
 Astroid :: struct {
+  alive: bool
   size: int 
-  width: int
-  height: int
+  hit_radius: f32
   position: Vector2d
+  velocity: Vector2d
   vertices: []Vector2d
-  velocity: []Vector2d
+  world_vertices: []Vector2d
 }
 
-createAstroid :: proc(width := 100, height := 100, size:= 3) ->  ^Astroid {
+createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
+
   astroid := cast(^Astroid)mem.alloc(size_of(Astroid))
-  astroid.size = int(size) 
-  astroid.width = int(f32(height)) * astroid.size 
-  astroid.height = int( f32(height)) * astroid.size
-  astroid.vertices = make([]Vector2d, 8)
+
+  {
+    sign_x := int(rand.int31()) % 100
+    sign_y := int(rand.int31()) % 100
+
+    //Random location
+    px := rand.float32() * f32(view.width)
+    py := rand.float32() * f32(view.height)
+
+    //Random Velocity
+    vx := f32(int(rand.int31()) % 500) / 200;
+    vy := f32(int(rand.int31()) % 500) / 200;
+
+    if sign_x >= 50 {
+      vx = -vx
+      px = -px
+    }
+    if sign_y >= 50 {
+      vy = -vy
+      py = -py
+    }
+    
+    astroid.position[0] = f32(px)
+    astroid.position[1] = f32(py)
+    astroid.velocity[0] = f32(vx)
+    astroid.velocity[1] = f32(vy)
+  }
   
-  OneThirdWidth := f32(astroid.width) * 0.3  
-  OneThirdHeight := f32(astroid.height) * 0.5  
+  astroid.size = int(size) 
+  astroid.vertices = make([]Vector2d, 8)
+  astroid.world_vertices = make([]Vector2d, 8)
 
-  //Top left
-  astroid.vertices[0] = {rand.float32() * f32(astroid.width) * 0.3 ,
-                       rand.float32() * f32(astroid.height) * 0.3}
-  //Top middle
-  astroid.vertices[1] = {rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth,
-                       rand.float32() * f32(astroid.height) * 0.3}
-  //Top right
-  astroid.vertices[2] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
-                       rand.float32() * f32(astroid.height) * 0.3}
-  //Right middle
-  astroid.vertices[3] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
-                       rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight}
-  //Bottom right
-  astroid.vertices[4] = {rand.float32() * f32(astroid.width)  * 0.3 + (OneThirdWidth * 2) ,
-                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
-  //Bottom middle
-  astroid.vertices[5] = {rand.float32() * f32(astroid.width) * 0.3 + OneThirdWidth,
-                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
-  //Bottom left
-  astroid.vertices[6] = {rand.float32() * f32(astroid.width) * 0.3,
-                       rand.float32() * f32(astroid.height) * 0.3 + (OneThirdHeight * 2)}
-  //Middle left
-  astroid.vertices[7] = {rand.float32() * f32(astroid.width) * 0.3,
-                       rand.float32() * f32(astroid.height) * 0.3 + OneThirdHeight}
+  // Creates random looking astroid
+  {
+    //Top left
+    astroid.vertices[0] = {rand.float32()* 0.3 ,
+                         rand.float32() * 0.3}
+    //Top middle
+    astroid.vertices[1] = {rand.float32() * 0.3 + 0.3,
+                         rand.float32() * 0.3}
+    //Top right
+    astroid.vertices[2] = {rand.float32() * 0.3 + 0.6 ,
+                         rand.float32() * 0.3}
+    //Right middle
+    astroid.vertices[3] = {rand.float32() * 0.3 + 0.6,
+                         rand.float32() * 0.3 + 0.3}
+    //Bottom right
+    astroid.vertices[4] = {rand.float32() * 0.3 + 0.6,
+                         rand.float32() * 0.3 + 0.6}
+    //Bottom middle
+    astroid.vertices[5] = {rand.float32() * 0.3 + 0.3,
+                         rand.float32() * 0.3 + 0.6}
+    //Bottom left
+    astroid.vertices[6] = {rand.float32() * 0.3,
+                         rand.float32() * 0.3 + 0.6}
+    //Middle left
+    astroid.vertices[7] = {rand.float32() * 0.3,
+                         rand.float32() * 0.3 + 0.3}
 
-  fmt.println(astroid.vertices)
+    screenTranslation := Vector2d{f32(view.width/2), f32(view.height/2)}
+    for i := 0; i < len(astroid.vertices); i += 1 {
+      astroid.vertices[i] = astroid.vertices[i] * 100
+      astroid.world_vertices[i] += astroid.vertices[i]
+      astroid.world_vertices[i] += astroid.vertices[i]
+    }
+
+  }
+
   return astroid
 }
 
@@ -59,16 +95,16 @@ destroyAstroid :: proc(astroid: ^Astroid){
 
 draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {
   x1, x2, y1, y2 : int
-  for i := 0; i < len(astroid.vertices)-1; i += 1 {
-    x1 = int(astroid.vertices[i][0]   + astroid.position[0]) - astroid.width/2 
-    y1 = int(astroid.vertices[i][1]   + astroid.position[1]) - astroid.height/2
-    x2 = int(astroid.vertices[i+1][0] + astroid.position[0]) - astroid.width/2
-    y2 = int(astroid.vertices[i+1][1] + astroid.position[1]) - astroid.height/2
+  for i := 0; i < len(astroid.world_vertices)-1; i += 1 {
+    x1 = int(astroid.world_vertices[i][0]   + astroid.position[0])
+    y1 = int(astroid.world_vertices[i][1]   + astroid.position[1])
+    x2 = int(astroid.world_vertices[i+1][0] + astroid.position[0])
+    y2 = int(astroid.world_vertices[i+1][1] + astroid.position[1])
     draw_line(x1, y1, x2, y2, color, view)
   }
-  x1 = int(astroid.vertices[0][0]   + astroid.position[0])  - astroid.width/2
-  y1 = int(astroid.vertices[0][1]   + astroid.position[1]) - astroid.height/2
-  x2 = int(astroid.vertices[len(astroid.vertices)-1][0] + astroid.position[0]) - astroid.width/2
-  y2 = int(astroid.vertices[len(astroid.vertices)-1][1] + astroid.position[1]) - astroid.height/2
+  x1 = int(astroid.world_vertices[0][0]   + astroid.position[0])
+  y1 = int(astroid.world_vertices[0][1]   + astroid.position[1])
+  x2 = int(astroid.world_vertices[len(astroid.vertices)-1][0] + astroid.position[0])
+  y2 = int(astroid.world_vertices[len(astroid.vertices)-1][1] + astroid.position[1])
   draw_line(x1, y1, x2, y2, color, view)
 }
