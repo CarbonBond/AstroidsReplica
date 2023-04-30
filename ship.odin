@@ -1,7 +1,7 @@
 package main
 
 Ship :: struct {
-  position: Vertex
+  position: Vector2d
   size: f32
   turn: int
   acceleration: int

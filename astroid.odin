@@ -8,8 +8,9 @@ Astroid :: struct {
   size: int 
   width: int
   height: int
-  position: Vertex
-  vertices: []Vertex
+  position: Vector2d
+  vertices: []Vector2d
+  velocity: []Vector2d
 }
 
 createAstroid :: proc(width := 100, height := 100, size:= 3) ->  ^Astroid {
@@ -17,7 +18,7 @@ createAstroid :: proc(width := 100, height := 100, size:= 3) ->  ^Astroid {
   astroid.size = int(size) 
   astroid.width = int(f32(height)) * astroid.size 
   astroid.height = int( f32(height)) * astroid.size
-  astroid.vertices = make([]Vertex, 8)
+  astroid.vertices = make([]Vector2d, 8)
   
   OneThirdWidth := f32(astroid.width) * 0.3  
   OneThirdHeight := f32(astroid.height) * 0.5  

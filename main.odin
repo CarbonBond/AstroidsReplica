@@ -34,8 +34,6 @@ Controls :: enum{
   shoot
 }
 
-Vertex :: [2]f32
-
 ship : Ship
 
 game := Game{}
@@ -45,7 +43,7 @@ astroid : ^Astroid
 
 main :: proc() {
   ship.size = 20
-  ship.position = Vertex{500, 500}
+  ship.position = Vector2d{500, 500}
   //rand.set_global_seed(0xFFFFFFFF)
   astroid = createAstroid()
   defer destroyAstroid(astroid)
