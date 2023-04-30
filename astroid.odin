@@ -5,7 +5,6 @@ import "core:mem"
 import "core:fmt"
 
 Astroid :: struct {
-  alive: bool
   size: int 
   hit_radius: f32
   position: Vector2d
