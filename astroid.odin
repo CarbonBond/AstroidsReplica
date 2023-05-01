@@ -31,7 +31,6 @@ create_astroid :: proc(view : ^View, size := 3) ->  ^Astroid {
     //Random location
     px := rand.float32() * f32(view.width)
     py := rand.float32() * f32(view.height)
-    fmt.println(px, " ", py)
 
     //Random Velocity
     vx := f32(int(rand.int31()) % 500) / 200;

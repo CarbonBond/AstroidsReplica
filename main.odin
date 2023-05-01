@@ -18,6 +18,7 @@ NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
 
 ASTROID_COUNT :: 4
+SHIP_ACCELERATION :: 0.06
 
 
 Game :: struct {
@@ -118,7 +119,23 @@ process_input :: proc(event: ^SDL.Event) {
       #partial switch event.key.keysym.scancode {
         case .ESCAPE:
           game.is_running = false
-          
+        case .W:
+          fallthrough
+        case .UP:
+          thrust := get_direction(ship.local_vertices[0])
+          thrust *= SHIP_ACCELERATION
+          apply_force(&ship.velocity, &thrust)
+
+        case .A:
+          fallthrough
+        case .LEFT:
+          rotate_ship(&ship, 0.01)
+
+        case .D:
+          fallthrough
+        case .RIGHT:
+          rotate_ship(&ship, -0.01)
+
       }
   }
 
@@ -134,7 +151,7 @@ update :: proc(prevTime: ^u32){
   prevTime^ = SDL.GetTicks()
 
   update_astroids(&game.astroids, &game.view)
-  update_ship(&ship)
+  update_ship(&ship, &game.view)
 
   /*
   ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
