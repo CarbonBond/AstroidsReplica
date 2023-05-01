@@ -15,13 +15,13 @@ Astroid :: struct {
 
 ASTROID_SCALE :: 100
 
-init_astroids :: proc(astroids: ^[dynamic]^Astroid, amount: int, view: View) {
+init_astroids :: proc(astroids: ^[dynamic]^Astroid, amount: int, view: ^View) {
   for i := 0; i < amount; i += 1 {
     append(astroids, createAstroid(view))
   }
 }
 
-createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
+createAstroid :: proc(view : ^View, size := 3) ->  ^Astroid {
   astroid := cast(^Astroid)mem.alloc(size_of(Astroid))
 
   {
@@ -92,7 +92,9 @@ createAstroid :: proc(view : View, size := 3) ->  ^Astroid {
 }
 
 destroy_astroids :: proc(astroids: ^[dynamic]^Astroid) {
-  for astroid in astroids {
+  for astroid, index in astroids {
+    astroids[index] = astroids[len(astroids)-1]
+    pop(astroids)
     destroyAstroid(astroid)
   } 
 }
@@ -102,25 +104,25 @@ destroyAstroid :: proc(astroid: ^Astroid){
   free(astroid)
 }
 
-update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: View) {
+update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: ^View) {
   for astroid in astroids {
     updateAstroid(astroid, view)
   } 
 }
-updateAstroid :: proc(astroid: ^Astroid, view: View) {
+updateAstroid :: proc(astroid: ^Astroid, view: ^View) {
   astroid.position += astroid.velocity 
   for i := 0; i < len(astroid.vertices); i += 1 {
     astroid.world_vertices[i] = astroid.vertices[i] + astroid.position 
   }
 }
 
-draw_astroids :: proc(astroids: ^[dynamic]^Astroid, color : u32, view: View) {
+draw_astroids :: proc(astroids: ^[dynamic]^Astroid, color : u32, view: ^View) {
   for astroid in astroids {
     draw_astroid(astroid, color, view)
   } 
 }
 
-draw_astroid :: proc(astroid: ^Astroid, color: u32, view: View) {
+draw_astroid :: proc(astroid: ^Astroid, color: u32, view: ^View) {
   x1, x2, y1, y2 : int
   for i := 0; i < len(astroid.world_vertices)-1; i += 1 {
     x1 = int(astroid.world_vertices[i][0])

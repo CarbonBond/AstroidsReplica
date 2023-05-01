@@ -12,14 +12,14 @@ View :: struct {
   color_buffer_texture: ^SDL.Texture,
 }
 
-draw_pixel :: proc(x: int, y: int, color: u32, view: View) {
+draw_pixel :: proc(x: int, y: int, color: u32, view: ^View) {
   if y >= 0 && y < view.height && x >= 0 && x < view.width {
     location := mem.ptr_offset(view.color_buffer,(y*view.width) + x)
     location^ = color;
   }
 }
 
-draw_line :: proc(x0, y0, x1, y1: int, color: u32, view: View) {
+draw_line :: proc(x0, y0, x1, y1: int, color: u32, view: ^View) {
   delta_x := (x1-x0)
   delta_y := (y1-y0)
 
@@ -44,7 +44,7 @@ draw_line :: proc(x0, y0, x1, y1: int, color: u32, view: View) {
   }
 }
 
-draw_rect :: proc(x, y, width, height: int, color: u32, view: View) {
+draw_rect :: proc(x, y, width, height: int, color: u32, view: ^View) {
   for current_y := y; current_y < y + height; current_y += 1 {
     for current_x := x; current_x < x + width; current_x += 1 {
       draw_pixel(current_x, current_y, color, view)
@@ -52,7 +52,7 @@ draw_rect :: proc(x, y, width, height: int, color: u32, view: View) {
   }
 }
 
-clear_color_buffer :: proc(color: u32, view: View) {
+clear_color_buffer :: proc(color: u32, view: ^View) {
   for current_y := 0; current_y < view.height; current_y += 1 {
     for current_x := 0; current_x < view.width; current_x += 1 {
       draw_pixel(current_x, current_y, color, view)
@@ -60,7 +60,7 @@ clear_color_buffer :: proc(color: u32, view: View) {
   }
 }
 
-render_color_buffer :: proc(view: View, renderer: ^SDL.Renderer) {
+render_color_buffer :: proc(renderer: ^SDL.Renderer, view: ^View) {
   SDL.UpdateTexture(
       view.color_buffer_texture,
       nil,

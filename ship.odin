@@ -8,7 +8,7 @@ Ship :: struct {
   speed: int
 }
 
-draw_ship :: proc(ship: ^Ship, color: u32, view: View) {
+draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
   x1, y1, x2, y2, x3, y3 : int 
 
   offset := ship.size/1.5
