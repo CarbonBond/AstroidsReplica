@@ -43,8 +43,6 @@ game := Game{}
 keys := Keypress{}
 
 main :: proc() {
-  ship.size = 20
-  ship.position = Vector2d{500, 500}
   //rand.set_global_seed(0xFFFFFFFF)
 
   assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
@@ -91,6 +89,23 @@ main :: proc() {
   }
 }
 
+setup :: proc() {
+  game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
+  assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
+
+  init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
+  init_ship(&ship)
+
+  game.view.color_buffer_texture = SDL.CreateTexture(
+    game.renderer,
+    372645892,
+    SDL.TextureAccess.STREAMING,
+    cast(i32)game.view.width,
+    cast(i32)game.view.height
+  )
+
+}
+
 process_input :: proc(event: ^SDL.Event) {
 
   SDL.PollEvent(event)
@@ -111,6 +126,7 @@ process_input :: proc(event: ^SDL.Event) {
   keys[Controls.accelerate] = int(kb[SDL.Scancode.W])
   keys[Controls.decelerate] = int(kb[SDL.Scancode.S])
 }
+
 update :: proc(prevTime: ^u32){
   waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
   prevTime := prevTime
@@ -118,12 +134,16 @@ update :: proc(prevTime: ^u32){
   prevTime^ = SDL.GetTicks()
 
   update_astroids(&game.astroids, &game.view)
+  update_ship(&ship)
 
+  /*
   ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
   ship.speed = 10
   ship.position[1] -= f32((ship.speed + ship.acceleration) * keys[Controls.accelerate])
   ship.position[1] += f32(ship.speed * keys[Controls.decelerate])
+  */
 }
+
 render :: proc() {
 
   draw_ship(&ship, NEON_GREEN, &game.view)
@@ -133,23 +153,5 @@ render :: proc() {
 
   SDL.RenderPresent(game.renderer)
 }
-
-
-setup :: proc() {
-  game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
-  assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
-
-  init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
-
-  game.view.color_buffer_texture = SDL.CreateTexture(
-    game.renderer,
-    372645892,
-    SDL.TextureAccess.STREAMING,
-    cast(i32)game.view.width,
-    cast(i32)game.view.height
-  )
-
-}
-
 
 

@@ -115,7 +115,7 @@ update_astroid :: proc(astroid: ^Astroid, view: ^View) {
   for i := 0; i < len(astroid.vertices); i += 1 {
     astroid.world_vertices[i] = astroid.vertices[i] + astroid.position 
   }
-  bound_astroid(astroid, view)
+  bound_position(&astroid.position, astroid.hit_radius, view)
 }
 
 draw_astroids :: proc(astroids: ^[dynamic]^Astroid, color : u32, view: ^View) {
@@ -138,20 +138,5 @@ draw_astroid :: proc(astroid: ^Astroid, color: u32, view: ^View) {
   x2 = int(astroid.world_vertices[len(astroid.vertices)-1][0])
   y2 = int(astroid.world_vertices[len(astroid.vertices)-1][1])
   draw_line(x1, y1, x2, y2, color, view)
-}
-
-bound_astroid :: proc(astroid: ^Astroid, view: ^View) {
-  if astroid.position[0] > f32(view.width) {
-    astroid.position[0] = 0 - (astroid.hit_radius * 2 ) + 1
-  } 
-  else if astroid.position[0] < 0 - astroid.hit_radius * 2  {
-    astroid.position[0] = f32(view.width) 
-  }
-  if astroid.position[1] > f32(view.height) {
-    astroid.position[1] = 0 - (astroid.hit_radius * 2) + 1
-  } 
-  else if astroid.position[1] < 0 - (astroid.hit_radius * 2)  {
-    astroid.position[1] = f32(view.height) 
-  }
 }
 
