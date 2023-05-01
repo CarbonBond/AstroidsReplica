@@ -18,7 +18,6 @@ NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
 
 ASTROID_COUNT :: 4
-SHIP_ACCELERATION :: 0.06
 
 
 Game :: struct {
@@ -30,15 +29,14 @@ Game :: struct {
 }
 
 Keypress :: [5]int
-Controls :: enum{
-  accelerate
-  decelerate
-  tLeft
-  tRight
-  shoot
+Controls :: struct {
+  accelerate : int
+  turn       : int
+  shoot      : int
 }
 
 ship : Ship
+controls : Controls
 
 game := Game{}
 keys := Keypress{}
@@ -119,29 +117,41 @@ process_input :: proc(event: ^SDL.Event) {
       #partial switch event.key.keysym.scancode {
         case .ESCAPE:
           game.is_running = false
+
         case .W:
           fallthrough
         case .UP:
-          thrust := get_direction(ship.local_vertices[0])
-          thrust *= SHIP_ACCELERATION
-          apply_force(&ship.velocity, &thrust)
+         controls.accelerate = 1
 
         case .A:
           fallthrough
         case .LEFT:
-          rotate_ship(&ship, 0.01)
+          controls.turn = 1
 
         case .D:
           fallthrough
         case .RIGHT:
-          rotate_ship(&ship, -0.01)
+          controls.turn = -1
 
       }
-  }
+    case SDL.EventType.KEYUP:
+      #partial switch event.key.keysym.scancode {
 
-  kb := SDL.GetKeyboardState(nil);
-  keys[Controls.accelerate] = int(kb[SDL.Scancode.W])
-  keys[Controls.decelerate] = int(kb[SDL.Scancode.S])
+        case .W:
+          fallthrough
+        case .UP:
+         controls.accelerate = 0
+
+        case .A:
+          fallthrough
+        case .LEFT:
+          fallthrough
+        case .D:
+          fallthrough
+        case .RIGHT:
+          controls.turn = 0
+      }
+  }
 }
 
 update :: proc(prevTime: ^u32){
@@ -151,14 +161,10 @@ update :: proc(prevTime: ^u32){
   prevTime^ = SDL.GetTicks()
 
   update_astroids(&game.astroids, &game.view)
-  update_ship(&ship, &game.view)
+  update_ship(&ship, &controls, &game.view)
 
-  /*
-  ship.acceleration += ((ship.acceleration * ship.acceleration) + (2 * ship.acceleration) ) 
-  ship.speed = 10
-  ship.position[1] -= f32((ship.speed + ship.acceleration) * keys[Controls.accelerate])
-  ship.position[1] += f32(ship.speed * keys[Controls.decelerate])
-  */
+
+
 }
 
 render :: proc() {

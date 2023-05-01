@@ -20,9 +20,11 @@ Bullet :: struct {
   alive:    bool
 }
 
-SHIP_MAXSPEED :: 2
-SHIP_SIZE     :: 20
-SHIP_LIVES    :: 3
+SHIP_MAXSPEED     :: 2
+SHIP_SIZE         :: 20
+SHIP_LIVES        :: 3
+SHIP_ACCELERATION :: 0.02
+SHIP_TURNRATE     :: 0.01
 
 init_ship :: proc(ship: ^Ship) {
 
@@ -54,7 +56,13 @@ draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
   }
 }
 
-update_ship :: proc(ship: ^Ship, view: ^View) {
+update_ship :: proc(ship: ^Ship, controls: ^Controls, view: ^View) {
+
+  thrust := get_direction(ship.local_vertices[0])
+  thrust *= SHIP_ACCELERATION * f32(controls.accelerate)
+  apply_force(&ship.velocity, &thrust)
+  rotate_ship(ship, SHIP_TURNRATE * f32(controls.turn))
+
   Vector2d_limit(&ship.velocity, SHIP_MAXSPEED)
   ship.position += ship.velocity
 
