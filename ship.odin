@@ -2,6 +2,17 @@ package main
 
 import "core:fmt"
 
+SHIP_MAXSPEED     :: 2
+SHIP_ATTACKSPEED  :: 500
+SHIP_SIZE         :: 20
+SHIP_LIVES        :: 3
+SHIP_ACCELERATION :: 0.02
+SHIP_DECELERATION :: 0.05
+SHIP_TURNRATE     :: 0.01
+SHIP_MAXBULLET    :: 100
+SHIP_BULLETSPEED  :: 1
+SHIP_BULLETSIZE   :: 4
+
 Ship :: struct {
   position:       Vector2d
   velocity:       Vector2d
@@ -12,26 +23,26 @@ Ship :: struct {
   lives:          int
   local_vertices: [3]Vector2d
   world_vertices: [3]Vector2d
+  bullets:        [dynamic]^Bullet
+  attack_speed:   u32
+  shot_time:      u32 
 }
 
 Bullet :: struct {
   position: Vector2d
   velocity: Vector2d
-  alive:    bool
+  size:     int 
 }
-
-SHIP_MAXSPEED     :: 2
-SHIP_SIZE         :: 20
-SHIP_LIVES        :: 3
-SHIP_ACCELERATION :: 0.02
-SHIP_DECELERATION :: 0.05
-SHIP_TURNRATE     :: 0.01
 
 init_ship :: proc(ship: ^Ship) {
 
   ship.size = SHIP_SIZE
   ship.position = Vector2d{500, 500}
   ship.lives = SHIP_LIVES
+  ship.attack_speed = SHIP_ATTACKSPEED
+  ship.shot_time = 0
+
+  ship.bullets = make([dynamic]^Bullet)
 
   offset := ship.size/1.5
 
@@ -74,17 +85,73 @@ update_ship :: proc(ship: ^Ship, controls: ^Controls, view: ^View) {
 
   bound_position(&ship.position, ship.hit_radius, view) 
 
-  for i := 0; i < len(ship.world_vertices); i += 1{
+  for i := 0; i < len(ship.world_vertices); i += 1 {
     ship.world_vertices[i] = ship.local_vertices[i] + ship.position
   }
+
+  bulletCount := len(ship.bullets)
+  for i := 0; i < bulletCount; i += 1 {
+    ship.bullets[i].position = ship.bullets[i].position + ship.bullets[i].velocity
+  }
+  for i := 0; i < bulletCount; i += 1 {
+    if ship.bullets[i].position[0] > f32(view.width) || ship.bullets[i].position[0] < 0 ||
+       ship.bullets[i].position[1] > f32(view.height) || ship.bullets[i].position[1] < 0  {
+      destroy_bullet(&ship.bullets, i)
+      bulletCount -= 1
+    }
+  }
 }
+
 rotate_ship :: proc(ship: ^Ship, amount: f32) {
   for i := 0; i < len(ship.local_vertices); i += 1 {
     Vector2d_rotate(&ship.local_vertices[i], amount)
   }
 }
+
 apply_force :: proc(velocity, extra: ^Vector2d) {
   velocity^ += extra^
 }
-shoot_bullet :: proc() {}
 
+shoot_bullet :: proc(ship: ^Ship, time: u32) {
+  if time >= ship.shot_time + ship.attack_speed  {
+    create_bullet(ship)
+    ship.shot_time = time
+  }
+}
+
+create_bullet :: proc(ship: ^Ship) {
+  bullet := new(Bullet)
+
+  direction := get_direction(ship.local_vertices[0])
+  bullet.velocity = (direction) * SHIP_BULLETSPEED
+  bullet.velocity += ship.velocity
+  Vector2d_limit(&bullet.velocity, 2)
+
+  bullet.position = ship.local_vertices[0] + ship.position
+  bullet.size = SHIP_BULLETSIZE
+
+  fmt.println(bullet)
+  append(&ship.bullets, bullet)
+}
+
+destroy_bullet :: proc(bullets: ^[dynamic]^Bullet, index: int) {
+  tmp := bullets[len(bullets) - 1]
+  free(bullets[index])
+  bullets[index] = tmp
+  pop(bullets)
+}
+
+draw_bullets :: proc(bullets: ^[dynamic]^Bullet, color: u32, view: ^View) {
+  for bullet in bullets {
+    draw_bullet(bullet, color, view)
+  }
+}
+draw_bullet :: proc(bullet: ^Bullet, color: u32, view: ^View) {
+  half := bullet.size / 2
+  for x := -half; x <= half ; x += 1 {
+    for y := -half; y <= half; y += 1 {
+      draw_pixel( x + int(bullet.position[0]), y + int(bullet.position[1]), 
+                  color, view)
+    }
+  }
+}

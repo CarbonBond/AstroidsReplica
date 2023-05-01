@@ -16,6 +16,7 @@ RENDER_WRAP  :: true
 
 NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
+NEON_YELLOW  :: 0xFFFFFFAA
 
 ASTROID_COUNT :: 4
 
@@ -138,6 +139,9 @@ process_input :: proc(event: ^SDL.Event) {
           fallthrough
         case .DOWN:
           controls.halt = 1
+
+        case .SPACE:
+          controls.shoot = 1
       }
     case SDL.EventType.KEYUP:
       #partial switch event.key.keysym.scancode {
@@ -155,10 +159,14 @@ process_input :: proc(event: ^SDL.Event) {
           fallthrough
         case .RIGHT:
           controls.turn = 0
+
         case .S:
           fallthrough
         case .DOWN:
           controls.halt = 0
+
+        case .SPACE:
+          controls.shoot = 0
       }
   }
 }
@@ -172,13 +180,16 @@ update :: proc(prevTime: ^u32){
   update_astroids(&game.astroids, &game.view)
   update_ship(&ship, &controls, &game.view)
 
-
+  if controls.shoot == 1 {
+    shoot_bullet(&ship, SDL.GetTicks())
+  }
 
 }
 
 render :: proc() {
 
   draw_ship(&ship, NEON_GREEN, &game.view)
+  draw_bullets(&ship.bullets, NEON_YELLOW, &game.view)
   draw_astroids(&game.astroids, NEON_RED, &game.view)
   render_color_buffer(game.renderer, &game.view)
   clear_color_buffer(0xFF121212, &game.view)

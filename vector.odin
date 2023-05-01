@@ -16,11 +16,9 @@ Vector2d_rotate :: proc(vector: ^Vector2d, turn: f32) {
   sin   := math.sin_f32(angle)
   cos   := math.cos_f32(angle)
 
-  fmt.println(vector)
   m := matrix[2, 2]f32{cos, -sin, 
                        sin,  cos}
   vector^ = Vector2d((vector^) * m)
-  fmt.println(vector)
   return
 }
 
