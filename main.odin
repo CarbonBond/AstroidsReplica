@@ -31,6 +31,7 @@ Game :: struct {
 Keypress :: [5]int
 Controls :: struct {
   accelerate : int
+  halt       : int
   turn       : int
   shoot      : int
 }
@@ -133,6 +134,10 @@ process_input :: proc(event: ^SDL.Event) {
         case .RIGHT:
           controls.turn = -1
 
+        case .S:
+          fallthrough
+        case .DOWN:
+          controls.halt = 1
       }
     case SDL.EventType.KEYUP:
       #partial switch event.key.keysym.scancode {
@@ -150,6 +155,10 @@ process_input :: proc(event: ^SDL.Event) {
           fallthrough
         case .RIGHT:
           controls.turn = 0
+        case .S:
+          fallthrough
+        case .DOWN:
+          controls.halt = 0
       }
   }
 }
