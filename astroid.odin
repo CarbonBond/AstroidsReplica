@@ -17,11 +17,11 @@ ASTROID_SCALE :: 100
 
 init_astroids :: proc(astroids: ^[dynamic]^Astroid, amount: int, view: ^View) {
   for i := 0; i < amount; i += 1 {
-    append(astroids, createAstroid(view))
+    append(astroids, create_astroid(view))
   }
 }
 
-createAstroid :: proc(view : ^View, size := 3) ->  ^Astroid {
+create_astroid :: proc(view : ^View, size := 3) ->  ^Astroid {
   astroid := cast(^Astroid)mem.alloc(size_of(Astroid))
 
   {
@@ -95,21 +95,22 @@ destroy_astroids :: proc(astroids: ^[dynamic]^Astroid) {
   for astroid, index in astroids {
     astroids[index] = astroids[len(astroids)-1]
     pop(astroids)
-    destroyAstroid(astroid)
+    destroy_astroid(astroid)
   } 
 }
 
-destroyAstroid :: proc(astroid: ^Astroid){
+destroy_astroid :: proc(astroid: ^Astroid){
   delete(astroid.vertices)
   free(astroid)
 }
 
 update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: ^View) {
   for astroid in astroids {
-    updateAstroid(astroid, view)
+    update_astroid(astroid, view)
   } 
 }
-updateAstroid :: proc(astroid: ^Astroid, view: ^View) {
+
+update_astroid :: proc(astroid: ^Astroid, view: ^View) {
   astroid.position += astroid.velocity 
   for i := 0; i < len(astroid.vertices); i += 1 {
     astroid.world_vertices[i] = astroid.vertices[i] + astroid.position 
