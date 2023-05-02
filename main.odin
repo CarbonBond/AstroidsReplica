@@ -172,16 +172,18 @@ process_input :: proc(event: ^SDL.Event) {
 }
 
 update :: proc(prevTime: ^u32){
-  waitTime := TARGET_DT - (SDL.GetTicks() - prevTime^);
+  curTime  := SDL.GetTicks()
+  waitTime := TARGET_DT - (curTime - prevTime^);
   prevTime := prevTime
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  update_astroids(&game.astroids, &game.view)
+  update_astroids(&game.astroids, &ship, curTime, &game.view)
   update_ship(&ship, &controls, &game.view)
 
+
   if controls.shoot == 1 {
-    shoot_bullet(&ship, SDL.GetTicks())
+    shoot_bullet(&ship, curTime)
   }
 
 }
@@ -196,5 +198,4 @@ render :: proc() {
 
   SDL.RenderPresent(game.renderer)
 }
-
 

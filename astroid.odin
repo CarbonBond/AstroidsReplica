@@ -6,6 +6,7 @@ import "core:fmt"
 
 Astroid :: struct {
   size: int 
+  world_size: int
   hit_radius: f32
   position: Vector2d
   velocity: Vector2d
@@ -52,7 +53,8 @@ create_astroid :: proc(view : ^View, size := 3) ->  ^Astroid {
   astroid.size = int(size) 
   astroid.vertices = make([]Vector2d, 8)
   astroid.world_vertices = make([]Vector2d, 8)
-  astroid.hit_radius = ASTROID_SCALE / 2
+  astroid.hit_radius = ASTROID_SCALE / 2.5
+  astroid.world_size = ASTROID_SCALE
 
   // Creates random looking astroid
   {
@@ -103,9 +105,10 @@ destroy_astroid :: proc(astroid: ^Astroid){
   free(astroid)
 }
 
-update_astroids :: proc(astroids: ^[dynamic]^Astroid, view: ^View) {
+update_astroids :: proc(astroids: ^[dynamic]^Astroid, ship: ^Ship, time: u32, view: ^View) {
   for astroid in astroids {
     update_astroid(astroid, view)
+    collide_astroid(ship, astroid, time)
   } 
 }
 
@@ -137,5 +140,17 @@ draw_astroid :: proc(astroid: ^Astroid, color: u32, view: ^View) {
   x2 = int(astroid.world_vertices[len(astroid.vertices)-1][0])
   y2 = int(astroid.world_vertices[len(astroid.vertices)-1][1])
   draw_line(x1, y1, x2, y2, color, view)
+}
+
+collide_astroid :: proc(ship: ^Ship, astroid: ^Astroid, time: u32) {
+  r2 := (astroid.hit_radius + ship.hit_radius) * (astroid.hit_radius + ship.hit_radius) 
+  distance := (ship.position + Vector2d{ship.size/1.5, ship.size/2} ) -
+              (astroid.position + Vector2d{f32(astroid.world_size)/2, f32(astroid.world_size)/2})
+  fmt.println(distance)
+  len := (distance[0] * distance[0] + distance[1] * distance[1])
+  if  len < r2 && time > (ship.invuln_time + ship.invuln_length) {
+    ship.lives -= 1
+    ship.invuln_time = time
+  }
 }
 

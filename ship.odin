@@ -11,7 +11,8 @@ SHIP_DECELERATION :: 0.05
 SHIP_TURNRATE     :: 0.01
 SHIP_MAXBULLET    :: 100
 SHIP_BULLETSPEED  :: 1
-SHIP_BULLETSIZE   :: 4
+SHIP_BULLETSIZE   :: 7
+SHIP_INVULNTIME   :: 2000
 
 Ship :: struct {
   position:       Vector2d
@@ -26,6 +27,8 @@ Ship :: struct {
   bullets:        [dynamic]^Bullet
   attack_speed:   u32
   shot_time:      u32 
+  invuln_time:    u32 
+  invuln_length:  u32 
 }
 
 Bullet :: struct {
@@ -36,11 +39,11 @@ Bullet :: struct {
 
 init_ship :: proc(ship: ^Ship) {
 
-  ship.size = SHIP_SIZE
-  ship.position = Vector2d{500, 500}
-  ship.lives = SHIP_LIVES
+  ship.size         = SHIP_SIZE
+  ship.position     = Vector2d{500, 500}
+  ship.lives        = SHIP_LIVES
   ship.attack_speed = SHIP_ATTACKSPEED
-  ship.shot_time = 0
+  ship.invuln_length = SHIP_INVULNTIME
 
   ship.bullets = make([dynamic]^Bullet)
 
@@ -65,6 +68,9 @@ draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
     draw_line(int(ship.world_vertices[2][0]),int(ship.world_vertices[2][1]),
               int(ship.world_vertices[0][0]),int(ship.world_vertices[0][1]),
               color, view)
+    for i := 0; i < ship.lives; i += 1 {
+      draw_rect(100 + (20 * i), 80, 10, 10, 0xFFFF3333, view)
+    }
   }
 }
 
@@ -130,7 +136,6 @@ create_bullet :: proc(ship: ^Ship) {
   bullet.position = ship.local_vertices[0] + ship.position
   bullet.size = SHIP_BULLETSIZE
 
-  fmt.println(bullet)
   append(&ship.bullets, bullet)
 }
 
@@ -148,10 +153,7 @@ draw_bullets :: proc(bullets: ^[dynamic]^Bullet, color: u32, view: ^View) {
 }
 draw_bullet :: proc(bullet: ^Bullet, color: u32, view: ^View) {
   half := bullet.size / 2
-  for x := -half; x <= half ; x += 1 {
-    for y := -half; y <= half; y += 1 {
-      draw_pixel( x + int(bullet.position[0]), y + int(bullet.position[1]), 
-                  color, view)
-    }
-  }
+  draw_rect( -half + int(bullet.position[0]), -half + int(bullet.position[1]), 
+             bullet.size, bullet.size,
+             color, view)
 }
