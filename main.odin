@@ -181,7 +181,6 @@ update :: proc(prevTime: ^u32){
   update_astroids(&game.astroids, &ship, curTime, &game.view)
   update_ship(&ship, &controls, &game.view)
 
-
   if controls.shoot == 1 {
     shoot_bullet(&ship, curTime)
   }
