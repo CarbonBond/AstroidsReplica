@@ -174,7 +174,6 @@ process_input :: proc(event: ^SDL.Event) {
 update :: proc(prevTime: ^u32){
   curTime  := SDL.GetTicks()
   waitTime := TARGET_DT - (curTime - prevTime^);
-  prevTime := prevTime
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 

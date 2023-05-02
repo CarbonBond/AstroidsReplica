@@ -3,7 +3,7 @@ package main
 import "core:fmt"
 
 SHIP_MAXSPEED     :: 2
-SHIP_ATTACKSPEED  :: 500
+SHIP_ATTACKSPEED  :: 300 //Lower is faster
 SHIP_SIZE         :: 20
 SHIP_LIVES        :: 3
 SHIP_ACCELERATION :: 0.02

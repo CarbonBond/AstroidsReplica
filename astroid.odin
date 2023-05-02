@@ -104,10 +104,14 @@ destroy_astroid :: proc(astroid: ^Astroid){
 }
 
 update_astroids :: proc(astroids: ^[dynamic]^Astroid, ship: ^Ship, time: u32, view: ^View) {
-  for astroid, index in astroids {
-    if astroid != nil {
-      update_astroid(astroid, view)
+  for index := 0; index < len(astroids); index += 1{
+    if astroids[index] != nil {
+      update_astroid(astroids[index], view)
       collide_astroid(ship, astroids, index, time, view)
+    } else {
+      astroids[index] = astroids[len(astroids) - 1]
+      pop(astroids)
+      index -= 1
     }
   } 
 }

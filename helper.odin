@@ -20,3 +20,4 @@ get_direction :: proc(vector: Vector2d) -> (direction: Vector2d) {
   Vector2d_normalise(&direction)
   return
 }
+
