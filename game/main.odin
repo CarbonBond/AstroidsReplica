@@ -18,7 +18,12 @@ NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
 NEON_YELLOW  :: 0xFFFFFFAA
 
+ADDRESS :: "127.0.0.1"
+PORT :: 7777
+
 ASTROID_COUNT :: 4
+
+temp : [10]u8
 
 
 Game :: struct {
@@ -27,6 +32,7 @@ Game :: struct {
   view: View,
   is_running: bool,
   astroids: [dynamic]^Astroid
+  connection: ^Connection
 }
 
 Keypress :: [5]int
@@ -80,12 +86,16 @@ main :: proc() {
   setup()
   defer free(game.view.color_buffer)
   defer destroy_astroids(&game.astroids)
+  defer close_connection(game.connection)
 
   game_loop : for game.is_running {
 
     process_input(&event)
     update(&prevTime)
-    render()
+    when SERVER {}
+    else {
+        render()
+    }
 
   }
 }
@@ -105,6 +115,7 @@ setup :: proc() {
     cast(i32)game.view.height
   )
 
+  game.connection = create_connection(PORT, ADDRESS)
 }
 
 process_input :: proc(event: ^SDL.Event) {
@@ -186,7 +197,13 @@ update :: proc(prevTime: ^u32){
   if controls.shoot == 1 {
     shoot_bullet(&ship, curTime)
   }
+  when SERVER{
 
+    recieve_data(game.connection, temp[:]) 
+    fmt.println(temp)
+  } else {
+    send_data(game.connection, []u8{1,2,3,4})
+  }
 }
 
 render :: proc() {
