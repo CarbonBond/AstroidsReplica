@@ -142,6 +142,9 @@ process_input :: proc(event: ^SDL.Event) {
 
         case .SPACE:
           controls.shoot = 1
+
+        case .R:
+          ship.lives += 1
       }
     case SDL.EventType.KEYUP:
       #partial switch event.key.keysym.scancode {
