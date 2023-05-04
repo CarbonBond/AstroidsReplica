@@ -52,7 +52,7 @@ controls : Controls
 game := Game{}
 
 main :: proc() {
-  //rand.set_global_seed(0xFFFFFFFF)
+  rand.set_global_seed(0xFFFFFFFF)
 
   setup()
   defer close()
@@ -74,14 +74,14 @@ main :: proc() {
 
 setup :: proc() {
 
+  assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
+  assert(SDL.GetCurrentDisplayMode(0, &game.display_mode) == 0, SDL.GetErrorString())
+
+  game.view.height = int(game.display_mode.h)
+  game.view.width  = int(game.display_mode.w)
+
   when SERVER {}
   else {
-    assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
-
-    assert(SDL.GetCurrentDisplayMode(0, &game.display_mode) == 0, SDL.GetErrorString())
-
-    game.view.height = int(game.display_mode.h)
-    game.view.width  = int(game.display_mode.w)
 
     game.view.window = SDL.CreateWindow(
       "Odin Astroids",
@@ -210,10 +210,12 @@ update :: proc(prevTime: ^u32){
   }
   when SERVER{
     endpoint := recieve_data(game.connection, temp[:]) 
-    fmt.printf("%8b\n", temp[0])
+    controls = transmute(Controls)(temp[0])
+    fmt.println(ship.position)
 
   } else {
     send_data(game.connection, []u8{transmute(u8)controls})
+    fmt.println(ship.position)
   }
 }
 
