@@ -36,19 +36,20 @@ Game :: struct {
   connection: ^Connection
 }
 
-Keypress :: [5]int
-Controls :: struct {
-  accelerate : int
-  halt       : int
-  turn       : int
-  shoot      : int
+Controls_enum :: enum u8 {
+  accelerate = 0 
+  halt       = 1
+  lTurn      = 2
+  rTurn      = 3
+  shoot      = 4
 }
+
+Controls :: bit_set[Controls_enum; u8]
 
 ship : Ship
 controls : Controls
 
 game := Game{}
-keys := Keypress{}
 
 main :: proc() {
   //rand.set_global_seed(0xFFFFFFFF)
@@ -61,10 +62,10 @@ main :: proc() {
 
   game_loop : for game.is_running {
 
-    process_input(&event)
     update(&prevTime)
     when SERVER {}
     else {
+        process_input(&event)
         render()
     }
 
@@ -143,25 +144,25 @@ process_input :: proc(event: ^SDL.Event) {
         case .W:
           fallthrough
         case .UP:
-         controls.accelerate = 1
+         incl(&controls, Controls_enum.accelerate)
 
         case .A:
           fallthrough
         case .LEFT:
-          controls.turn = 1
+          incl(&controls, Controls_enum.lTurn)
 
         case .D:
           fallthrough
         case .RIGHT:
-          controls.turn = -1
+          incl(&controls, Controls_enum.rTurn)
 
         case .S:
           fallthrough
         case .DOWN:
-          controls.halt = 1
+          incl(&controls, Controls_enum.halt)
 
         case .SPACE:
-          controls.shoot = 1
+          incl(&controls, Controls_enum.shoot)
 
         case .R:
           ship.lives += 1
@@ -172,24 +173,25 @@ process_input :: proc(event: ^SDL.Event) {
         case .W:
           fallthrough
         case .UP:
-         controls.accelerate = 0
+          excl(&controls, Controls_enum.accelerate)
 
         case .A:
           fallthrough
         case .LEFT:
-          fallthrough
+          excl(&controls, Controls_enum.lTurn)
+
         case .D:
           fallthrough
         case .RIGHT:
-          controls.turn = 0
+          excl(&controls, Controls_enum.rTurn)
 
         case .S:
           fallthrough
         case .DOWN:
-          controls.halt = 0
+          excl(&controls, Controls_enum.halt)
 
         case .SPACE:
-          controls.shoot = 0
+          excl(&controls, Controls_enum.shoot)
       }
   }
 }
@@ -203,14 +205,15 @@ update :: proc(prevTime: ^u32){
   update_astroids(&game.astroids, &ship, curTime, &game.view)
   update_ship(&ship, &controls, &game.view)
 
-  if controls.shoot == 1 {
+  if Controls_enum.shoot in controls {
     shoot_bullet(&ship, curTime)
   }
   when SERVER{
     endpoint := recieve_data(game.connection, temp[:]) 
-    fmt.println(endpoint)
+    fmt.printf("%8b\n", temp[0])
+
   } else {
-    send_data(game.connection, []u8{1,2,3,4})
+    send_data(game.connection, []u8{transmute(u8)controls})
   }
 }
 

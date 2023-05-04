@@ -77,14 +77,15 @@ draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
 update_ship :: proc(ship: ^Ship, controls: ^Controls, view: ^View) {
 
   thrust := get_direction(ship.local_vertices[0])
-  thrust *= SHIP_ACCELERATION * f32(controls.accelerate)
+  thrust *= SHIP_ACCELERATION * f32(int(Controls_enum.accelerate in controls))
   apply_force(&ship.velocity, &thrust)
 
   thrust = get_direction(ship.velocity) * -1
-  thrust *= SHIP_DECELERATION* f32(controls.halt)
+  thrust *= SHIP_DECELERATION* f32(int(Controls_enum.halt in controls))
   apply_force(&ship.velocity, &thrust)
 
-  rotate_ship(ship, SHIP_TURNRATE * f32(controls.turn))
+  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.lTurn in controls)))
+  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.rTurn in controls)) * -1)
 
   Vector2d_limit(&ship.velocity, SHIP_MAXSPEED)
   ship.position += ship.velocity
