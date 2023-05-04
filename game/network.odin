@@ -54,8 +54,9 @@ send_data :: proc(connection: ^Connection, buffer: []u8) {
     bytesWritten += sentData
   }
 }
-recieve_data :: proc(connection: ^Connection, buffer: []u8) {
-  bytesRead, endPoint, err := NET.recv_udp(connection.socket, buffer)
+recieve_data :: proc(connection: ^Connection, buffer: []u8) -> NET.Endpoint {
+  bytesRead, endpoint, err := NET.recv_udp(connection.socket, buffer)
+  return endpoint
 }
 
 close_connection ::proc(connection: ^Connection) {

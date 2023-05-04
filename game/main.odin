@@ -28,6 +28,7 @@ temp : [10]u8
 
 Game :: struct {
   perf_frequency: f64,
+  display_mode: SDL.DisplayMode
   renderer: ^SDL.Renderer,
   view: View,
   is_running: bool,
@@ -52,41 +53,11 @@ keys := Keypress{}
 main :: proc() {
   //rand.set_global_seed(0xFFFFFFFF)
 
-  assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
-  defer SDL.Quit()
-
-  display_mode : SDL.DisplayMode
-  assert(SDL.GetCurrentDisplayMode(0, &display_mode) == 0, SDL.GetErrorString())
-
-  game.view.height = int(display_mode.h)
-  game.view.width  = int(display_mode.w)
-
-
-  game.view.window = SDL.CreateWindow(
-    "Odin Astroids",
-    SDL.WINDOWPOS_CENTERED,
-    SDL.WINDOWPOS_CENTERED,
-    cast(i32)game.view.width,
-    cast(i32)game.view.height,
-    WINDOW_FLAGS
-  )
-  assert(game.view.window != nil, SDL.GetErrorString()) 
-  defer SDL.DestroyWindow(game.view.window)
-
-  game.renderer = SDL.CreateRenderer( game.view.window, -1, RENDER_FLAGS)
-  assert(render != nil, SDL.GetErrorString())
-  defer SDL.DestroyRenderer(game.renderer)
+  setup()
+  defer close()
 
   event : SDL.Event
-  state : [^]u8
-
-  game.is_running = true
   prevTime : u32 = SDL.GetTicks();
-
-  setup()
-  defer free(game.view.color_buffer)
-  defer destroy_astroids(&game.astroids)
-  defer close_connection(game.connection)
 
   game_loop : for game.is_running {
 
@@ -101,21 +72,59 @@ main :: proc() {
 }
 
 setup :: proc() {
-  game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
-  assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
+
+  when SERVER {}
+  else {
+    assert(SDL.Init(SDL.INIT_EVERYTHING) == 0, SDL.GetErrorString())
+
+    assert(SDL.GetCurrentDisplayMode(0, &game.display_mode) == 0, SDL.GetErrorString())
+
+    game.view.height = int(game.display_mode.h)
+    game.view.width  = int(game.display_mode.w)
+
+    game.view.window = SDL.CreateWindow(
+      "Odin Astroids",
+      SDL.WINDOWPOS_CENTERED,
+      SDL.WINDOWPOS_CENTERED,
+      cast(i32)game.view.width,
+      cast(i32)game.view.height,
+      WINDOW_FLAGS
+    )
+    assert(game.view.window != nil, SDL.GetErrorString()) 
+
+    game.renderer = SDL.CreateRenderer( game.view.window, -1, RENDER_FLAGS)
+    assert(render != nil, SDL.GetErrorString())
+
+    game.view.color_buffer = cast(^u32)mem.alloc(size_of(u32) * game.view.width * game.view.height)
+    assert(game.view.color_buffer != nil, "Error: Couldn't allocate color_buffer")
+
+    game.view.color_buffer_texture = SDL.CreateTexture(
+      game.renderer,
+      372645892,
+      SDL.TextureAccess.STREAMING,
+      cast(i32)game.view.width,
+      cast(i32)game.view.height
+    )
+  }
+
+  game.is_running = true
 
   init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
   init_ship(&ship)
 
-  game.view.color_buffer_texture = SDL.CreateTexture(
-    game.renderer,
-    372645892,
-    SDL.TextureAccess.STREAMING,
-    cast(i32)game.view.width,
-    cast(i32)game.view.height
-  )
-
   game.connection = create_connection(PORT, ADDRESS)
+}
+
+close :: proc() {
+  when SERVER {
+  } else {
+    defer SDL.Quit()
+    defer SDL.DestroyWindow(game.view.window)
+    defer SDL.DestroyRenderer(game.renderer)
+    defer free(game.view.color_buffer)
+  }
+  defer destroy_astroids(&game.astroids)
+  defer close_connection(game.connection)
 }
 
 process_input :: proc(event: ^SDL.Event) {
@@ -198,9 +207,8 @@ update :: proc(prevTime: ^u32){
     shoot_bullet(&ship, curTime)
   }
   when SERVER{
-
-    recieve_data(game.connection, temp[:]) 
-    fmt.println(temp)
+    endpoint := recieve_data(game.connection, temp[:]) 
+    fmt.println(endpoint)
   } else {
     send_data(game.connection, []u8{1,2,3,4})
   }
