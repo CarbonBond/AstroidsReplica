@@ -37,6 +37,11 @@ Bullet :: struct {
   size:     int 
 }
 
+create_ship :: proc(view: ^View, positioni := Vector2d{1000,1000}) -> ^Ship {
+  ship := new(Ship)
+  init_ship(ship)
+  return ship
+}
 init_ship :: proc(ship: ^Ship) {
 
   ship.size         = SHIP_SIZE
@@ -54,7 +59,6 @@ init_ship :: proc(ship: ^Ship) {
   ship.local_vertices[0] = Vector2d{      0, -ship.size}
   ship.local_vertices[1] = Vector2d{ offset,  ship.size}
   ship.local_vertices[2] = Vector2d{-offset,  ship.size}
-
 }
 
 draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {

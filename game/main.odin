@@ -34,6 +34,7 @@ Game :: struct {
   is_running: bool,
   astroids: [dynamic]^Astroid
   connection: ^Connection
+  connections: map[string]int
 }
 
 Controls_enum :: enum u8 {
@@ -44,9 +45,10 @@ Controls_enum :: enum u8 {
   shoot      = 4
 }
 
+ships : [dynamic]^Ship
+
 Controls :: bit_set[Controls_enum; u8]
 
-ship : Ship
 controls : Controls
 
 game := Game{}
@@ -80,7 +82,8 @@ setup :: proc() {
   game.view.height = int(game.display_mode.h)
   game.view.width  = int(game.display_mode.w)
 
-  when SERVER {}
+  when SERVER {
+  }
   else {
 
     game.view.window = SDL.CreateWindow(
@@ -108,11 +111,15 @@ setup :: proc() {
     )
   }
 
+
   game.is_running = true
 
+  
+  append(&ships, create_ship(&game.view))
   init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
-  init_ship(&ship)
+  init_ship(ships[0])
 
+  game.connections = make(map[string]int)
   game.connection = create_connection(PORT, ADDRESS)
 }
 
@@ -165,7 +172,7 @@ process_input :: proc(event: ^SDL.Event) {
           incl(&controls, Controls_enum.shoot)
 
         case .R:
-          ship.lives += 1
+          ships[0].lives += 1
       }
     case SDL.EventType.KEYUP:
       #partial switch event.key.keysym.scancode {
@@ -202,27 +209,28 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  update_astroids(&game.astroids, &ship, curTime, &game.view)
-  update_ship(&ship, &controls, &game.view)
+  update_astroids(&game.astroids, ships[0], curTime, &game.view)
+  for ship in ships {
+    update_ship(ships[0], &controls, &game.view)
+  }
 
   if Controls_enum.shoot in controls {
-    shoot_bullet(&ship, curTime)
+    shoot_bullet(ships[0], curTime)
   }
   when SERVER{
-    endpoint := recieve_data(game.connection, temp[:]) 
+    recieved := recieve_data(game.connection, temp[:]) 
+    fmt.println(recieved)
     controls = transmute(Controls)(temp[0])
-    fmt.println(ship.position)
-
   } else {
     send_data(game.connection, []u8{transmute(u8)controls})
-    fmt.println(ship.position)
+    fmt.println(ships[0].position)
   }
 }
 
 render :: proc() {
 
-  draw_ship(&ship, NEON_GREEN, &game.view)
-  draw_bullets(&ship.bullets, NEON_YELLOW, &game.view)
+  draw_ship(ships[0], NEON_GREEN, &game.view)
+  draw_bullets(&ships[0].bullets, NEON_YELLOW, &game.view)
   draw_astroids(&game.astroids, NEON_RED, &game.view)
   render_color_buffer(game.renderer, &game.view)
   clear_color_buffer(0xFF121212, &game.view)
