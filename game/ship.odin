@@ -14,6 +14,8 @@ SHIP_BULLETSPEED  :: 1
 SHIP_BULLETSIZE   :: 7
 SHIP_INVULNTIME   :: 2000
 
+Controls :: bit_set[Controls_enum; u8]
+
 Ship :: struct {
   position:       Vector2d
   velocity:       Vector2d
@@ -29,7 +31,9 @@ Ship :: struct {
   shot_time:      u32 
   invuln_time:    u32 
   invuln_length:  u32 
+  controls : Controls
 }
+
 
 Bullet :: struct {
   position: Vector2d
@@ -59,6 +63,8 @@ init_ship :: proc(ship: ^Ship) {
   ship.local_vertices[0] = Vector2d{      0, -ship.size}
   ship.local_vertices[1] = Vector2d{ offset,  ship.size}
   ship.local_vertices[2] = Vector2d{-offset,  ship.size}
+
+  ship.controls = Controls{}
 }
 
 draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
@@ -78,18 +84,18 @@ draw_ship :: proc(ship: ^Ship, color: u32, view: ^View) {
   }
 }
 
-update_ship :: proc(ship: ^Ship, controls: ^Controls, view: ^View) {
+update_ship :: proc(ship: ^Ship, view: ^View) {
 
   thrust := get_direction(ship.local_vertices[0])
-  thrust *= SHIP_ACCELERATION * f32(int(Controls_enum.accelerate in controls))
+  thrust *= SHIP_ACCELERATION * f32(int(Controls_enum.accelerate in ship.controls))
   apply_force(&ship.velocity, &thrust)
 
   thrust = get_direction(ship.velocity) * -1
-  thrust *= SHIP_DECELERATION* f32(int(Controls_enum.halt in controls))
+  thrust *= SHIP_DECELERATION* f32(int(Controls_enum.halt in ship.controls))
   apply_force(&ship.velocity, &thrust)
 
-  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.lTurn in controls)))
-  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.rTurn in controls)) * -1)
+  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.lTurn in ship.controls)))
+  rotate_ship(ship, SHIP_TURNRATE * f32(int(Controls_enum.rTurn in ship.controls)) * -1)
 
   Vector2d_limit(&ship.velocity, SHIP_MAXSPEED)
   ship.position += ship.velocity

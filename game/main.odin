@@ -43,13 +43,10 @@ Controls_enum :: enum u8 {
   lTurn      = 2
   rTurn      = 3
   shoot      = 4
+  exit       = 5
 }
 
 ships : [dynamic]^Ship
-
-Controls :: bit_set[Controls_enum; u8]
-
-controls : Controls
 
 game := Game{}
 
@@ -109,15 +106,15 @@ setup :: proc() {
       cast(i32)game.view.width,
       cast(i32)game.view.height
     )
+    append(&ships, create_ship(&game.view))
+    init_ship(ships[0])
   }
 
 
   game.is_running = true
 
   
-  append(&ships, create_ship(&game.view))
   init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
-  init_ship(ships[0])
 
   game.connections = make(map[string]int)
   game.connection = create_connection(PORT, ADDRESS)
@@ -146,30 +143,30 @@ process_input :: proc(event: ^SDL.Event) {
     case SDL.EventType.KEYDOWN:
       #partial switch event.key.keysym.scancode {
         case .ESCAPE:
-          game.is_running = false
+           incl(&ships[0].controls, Controls_enum.exit)
 
         case .W:
           fallthrough
         case .UP:
-         incl(&controls, Controls_enum.accelerate)
+         incl(&ships[0].controls, Controls_enum.accelerate)
 
         case .A:
           fallthrough
         case .LEFT:
-          incl(&controls, Controls_enum.lTurn)
+          incl(&ships[0].controls, Controls_enum.lTurn)
 
         case .D:
           fallthrough
         case .RIGHT:
-          incl(&controls, Controls_enum.rTurn)
+          incl(&ships[0].controls, Controls_enum.rTurn)
 
         case .S:
           fallthrough
         case .DOWN:
-          incl(&controls, Controls_enum.halt)
+          incl(&ships[0].controls, Controls_enum.halt)
 
         case .SPACE:
-          incl(&controls, Controls_enum.shoot)
+          incl(&ships[0].controls, Controls_enum.shoot)
 
         case .R:
           ships[0].lives += 1
@@ -180,25 +177,25 @@ process_input :: proc(event: ^SDL.Event) {
         case .W:
           fallthrough
         case .UP:
-          excl(&controls, Controls_enum.accelerate)
+          excl(&ships[0].controls, Controls_enum.accelerate)
 
         case .A:
           fallthrough
         case .LEFT:
-          excl(&controls, Controls_enum.lTurn)
+          excl(&ships[0].controls, Controls_enum.lTurn)
 
         case .D:
           fallthrough
         case .RIGHT:
-          excl(&controls, Controls_enum.rTurn)
+          excl(&ships[0].controls, Controls_enum.rTurn)
 
         case .S:
           fallthrough
         case .DOWN:
-          excl(&controls, Controls_enum.halt)
+          excl(&ships[0].controls, Controls_enum.halt)
 
         case .SPACE:
-          excl(&controls, Controls_enum.shoot)
+          excl(&ships[0].controls, Controls_enum.shoot)
       }
   }
 }
@@ -209,22 +206,30 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-  update_astroids(&game.astroids, ships[0], curTime, &game.view)
-  for ship in ships {
-    update_ship(ships[0], &controls, &game.view)
-  }
 
-  if Controls_enum.shoot in controls {
-    shoot_bullet(ships[0], curTime)
-  }
+
+  
   when SERVER{
     recieved := recieve_data(game.connection, temp[:]) 
-    fmt.println(recieved)
-    controls = transmute(Controls)(temp[0])
+    if recieved.name in game.connections {
+      for key, value in game.connections {
+        ships[value].controls = transmute(Controls)(temp[0])
+      }
+    } else {
+      game.connections[recieved.name] = len(ships)
+      append(&ships, create_ship(&game.view))
+    }
   } else {
-    send_data(game.connection, []u8{transmute(u8)controls})
-    fmt.println(ships[0].position)
+    send_data(game.connection, []u8{transmute(u8)ships[0].controls})
   }
+
+  for ship in ships {
+    update_astroids(&game.astroids, ship, curTime, &game.view)
+    update_ship(ship, &game.view)
+    if Controls_enum.shoot in ship.controls do shoot_bullet(ship, curTime)
+    if Controls_enum.exit  in ship.controls do game.is_running = false
+  }
+
 }
 
 render :: proc() {
