@@ -21,3 +21,18 @@ get_direction :: proc(vector: Vector2d) -> (direction: Vector2d) {
   return
 }
 
+int_to_u8_array ::proc(a: int) -> (array: [4]u8) {
+  array[0] = u8(a >> 24)
+  array[1] = u8(a >> 16)
+  array[2] = u8(a >> 8)
+  array[3] = u8(a )
+  return
+}
+
+u8_array_to_int :: proc(array: []u8) -> (num: int) {
+  num += int(array[0]) << 24
+  num += int(array[1]) << 16
+  num += int(array[2]) << 8
+  num += int(array[3]) 
+  return
+}

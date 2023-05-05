@@ -23,7 +23,7 @@ PORT :: 7777
 
 ASTROID_COUNT :: 4
 
-temp : [10]u8
+temp : [100]u8
 
 
 Game :: struct {
@@ -214,13 +214,23 @@ update :: proc(prevTime: ^u32){
     if recieved.name in game.connections {
       for key, value in game.connections {
         ships[value].controls = transmute(Controls)(temp[0])
+        ships[value].controls = transmute(Controls)(temp[0])
+        ships[value].position[0] = f32(u8_array_to_int(temp[1:6]))
+        ships[value].position[1] = f32(u8_array_to_int(temp[5:10]))
       }
     } else {
       game.connections[recieved.name] = len(ships)
       append(&ships, create_ship(&game.view))
     }
   } else {
-    send_data(game.connection, []u8{transmute(u8)ships[0].controls})
+    position_x := int_to_u8_array(int(ships[0].position[0]))
+    position_y := int_to_u8_array(int(ships[0].position[1]))
+    fmt.println(ships[0].position[1])
+    fmt.println(position_y)
+    data := []u8{transmute(u8)ships[0].controls, 
+        position_x[0], position_x[1], position_x[2], position_x[3]
+        position_y[0], position_y[1], position_y[2], position_y[3]}
+    send_data(game.connection, data)
   }
 
   for ship in ships {
