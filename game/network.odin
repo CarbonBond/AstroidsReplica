@@ -13,10 +13,10 @@ Connection :: struct{
   endpoint: NET.Endpoint
 }
 
-Reciever :: struct {
-  endpoint: NET.Endpoint
-  name:     string
-  id:       int
+Receiver :: struct {
+  connection: Connection
+  name:       string
+  id:         int
 }
 
 SERVER :: #config (SERVER,false)
@@ -28,29 +28,16 @@ create_connection :: proc(port: int, ip: string) -> ^Connection {
   address := NET.parse_address(ip)
   endpoint := NET.Endpoint {
     address,
-    PORT
+    port
   }
 
   connection := new(Connection)
   connection.endpoint = endpoint
 
-  when SERVER {
-    connection.socket = create_server(connection.endpoint)
-  }
-  else {
-    connection.socket = create_client()
-  }
+  socket, err := NET.make_bound_udp_socket(address, PORT)
+  connection.socket = socket
 
   return connection
-}
-
-create_server :: proc(endpoint: NET.Endpoint) -> NET.UDP_Socket{
-  socket, err := NET.make_bound_udp_socket(endpoint.address, endpoint.port)
-  return socket
-}
-create_client :: proc() -> NET.UDP_Socket {
-  socket, err := NET.make_unbound_udp_socket(NET.Address_Family.IP4)
-  return socket
 }
 
 
@@ -63,17 +50,19 @@ send_data :: proc(connection: ^Connection, buffer: []u8) {
   }
 }
 
-recieve_data :: proc(connection: ^Connection, buffer: []u8) -> Reciever {
-  recieve : Reciever
+receive_data :: proc(connection: ^Connection, buffer: []u8, id: int) -> receiver {
+  receive : receiver
+  FMT.println("trying to get data")
   bytesRead, endpoint, err := NET.recv_udp(connection.socket, buffer)
-  recieve.endpoint = endpoint
+  receive.endpoint = endpoint
 
   temp : [10]byte
   name  : [2]string
   name[0] = NET.address_to_string(endpoint.address)
   name[1] = STRC.itoa(temp[:], endpoint.port)
-  recieve.name = STR.concatenate(name[:]) 
-  return recieve
+  receive.name = STR.concatenate(name[:]) 
+  receive.id = id
+  return receive
 }
 
 close_connection ::proc(connection: ^Connection) {

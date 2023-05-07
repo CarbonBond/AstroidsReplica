@@ -162,6 +162,7 @@ draw_bullets :: proc(bullets: ^[dynamic]^Bullet, color: u32, view: ^View) {
     draw_bullet(bullet, color, view)
   }
 }
+
 draw_bullet :: proc(bullet: ^Bullet, color: u32, view: ^View) {
   half := bullet.size / 2
   draw_rect( -half + int(bullet.position[0]), -half + int(bullet.position[1]), 

@@ -3,6 +3,7 @@ package main
 // Imports
 import "core:fmt"
 import "core:mem"
+import NET "core:net"
 import SDL "vendor:sdl2"
 import rand "core:math/rand"
 
@@ -32,9 +33,10 @@ Game :: struct {
   renderer: ^SDL.Renderer,
   view: View,
   is_running: bool,
+  not_started: bool,
   astroids: [dynamic]^Astroid
   connection: ^Connection
-  connections: map[string]int
+  connections: map[string]Receiver
 }
 
 Controls_enum :: enum u8 {
@@ -79,6 +81,11 @@ setup :: proc() {
   game.view.height = int(game.display_mode.h)
   game.view.width  = int(game.display_mode.w)
 
+  game.not_started = true
+
+  game.connection = create_connection(PORT, ADDRESS)
+  game.connections = make(map[string]Receiver)
+
   when SERVER {
   }
   else {
@@ -116,8 +123,6 @@ setup :: proc() {
   
   init_astroids(&game.astroids, ASTROID_COUNT, &game.view)
 
-  game.connections = make(map[string]int)
-  game.connection = create_connection(PORT, ADDRESS)
 }
 
 close :: proc() {
@@ -210,37 +215,35 @@ update :: proc(prevTime: ^u32){
 
   
   when SERVER{
-    recieved := recieve_data(game.connection, temp[:]) 
-    if recieved.name in game.connections {
+    received := receive_data(game.connection, temp[:], len(game.connections) 
+    if received.name in game.connections {
       for key, value in game.connections {
-        ships[value].controls = transmute(Controls)(temp[0])
-        ships[value].controls = transmute(Controls)(temp[0])
-        ships[value].position[0] = f32(u8_array_to_int(temp[1:6]))
-        ships[value].position[1] = f32(u8_array_to_int(temp[5:10]))
+        data := []u8{transmute(u8)ships[value.id].controls} 
+        send
       }
-    } else {
-      game.connections[recieved.name] = len(ships)
-      append(&ships, create_ship(&game.view))
+    }
+    else {
+      game.connections[receiver.name] = receiver
     }
   } else {
-    position_x := int_to_u8_array(int(ships[0].position[0]))
-    position_y := int_to_u8_array(int(ships[0].position[1]))
-    fmt.println(ships[0].position[1])
-    fmt.println(position_y)
-    data := []u8{transmute(u8)ships[0].controls, 
-        position_x[0], position_x[1], position_x[2], position_x[3]
-        position_y[0], position_y[1], position_y[2], position_y[3]}
+
+    //Send your ships controls to server
+    data := []u8{transmute(u8)ships[0].controls} 
     send_data(game.connection, data)
-  }
 
-  for ship in ships {
-    update_astroids(&game.astroids, ship, curTime, &game.view)
-    update_ship(ship, &game.view)
-    if Controls_enum.shoot in ship.controls do shoot_bullet(ship, curTime)
-    if Controls_enum.exit  in ship.controls do game.is_running = false
+    received := receive_data(game.connection, temp[:]) 
+    if received.name in game.connections {
+      for key, value in game.connections {
+        ships[value].controls = transmute(Controls)(temp[0])
+      }
   }
-
-}
+    for ship in ships {
+      update_astroids(&game.astroids, ship, curTime, &game.view)
+      update_ship(ship, &game.view)
+      if Controls_enum.shoot in ship.controls do shoot_bullet(ship, curTime)
+      if Controls_enum.exit  in ship.controls do game.is_running = false
+    }
+  }
 
 render :: proc() {
 
