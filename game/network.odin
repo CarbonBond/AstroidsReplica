@@ -34,7 +34,7 @@ create_connection :: proc(port: int, ip: string) -> ^Connection {
   connection := new(Connection)
   connection.endpoint = endpoint
 
-  socket, err := NET.make_bound_udp_socket(address, PORT)
+  socket, err = NET.make_bound_udp_socket(address, PORT)
   connection.socket = socket
 
   return connection
@@ -50,18 +50,18 @@ send_data :: proc(connection: ^Connection, buffer: []u8) {
   }
 }
 
-receive_data :: proc(connection: ^Connection, buffer: []u8, id: int) -> receiver {
-  receive : receiver
-  FMT.println("trying to get data")
+receive_data :: proc(connection: ^Connection, buffer: []u8) -> Receiver {
+  receive : Receiver
   bytesRead, endpoint, err := NET.recv_udp(connection.socket, buffer)
-  receive.endpoint = endpoint
+  receive.connection.endpoint = endpoint
+  receive.connection.socket = connection.socket
 
   temp : [10]byte
   name  : [2]string
   name[0] = NET.address_to_string(endpoint.address)
   name[1] = STRC.itoa(temp[:], endpoint.port)
   receive.name = STR.concatenate(name[:]) 
-  receive.id = id
+
   return receive
 }
 

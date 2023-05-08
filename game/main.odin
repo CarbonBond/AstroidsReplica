@@ -25,7 +25,7 @@ PORT :: 7777
 ASTROID_COUNT :: 4
 
 temp : [100]u8
-
+ship_index : u8
 
 Game :: struct {
   perf_frequency: f64,
@@ -87,6 +87,7 @@ setup :: proc() {
   game.connections = make(map[string]Receiver)
 
   when SERVER {
+    ship_index = 0
   }
   else {
 
@@ -113,10 +114,19 @@ setup :: proc() {
       cast(i32)game.view.width,
       cast(i32)game.view.height
     )
-    append(&ships, create_ship(&game.view))
-    init_ship(ships[0])
-  }
 
+    send_data(game.connection, []u8{0xFF})
+    ship_id : [2]u8
+    received := receive_data(game.connection, ship_id[:]) 
+
+    for i : u8 = 0; i < (ship_id[0]); i += 1 {
+      append(&ships, create_ship(&game.view))
+      init_ship(ships[i])
+    }
+    append(&ships, create_ship(&game.view))
+    init_ship(ships[ship_id[0]])
+    ship_index = ship_id[0]
+  }
 
   game.is_running = true
 
@@ -211,44 +221,50 @@ update :: proc(prevTime: ^u32){
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
   prevTime^ = SDL.GetTicks()
 
-
-
-  
-  when SERVER{
-    received := receive_data(game.connection, temp[:], len(game.connections) 
+  when SERVER {
+    received := receive_data(game.connection, temp[:] )
     if received.name in game.connections {
       for key, value in game.connections {
-        data := []u8{transmute(u8)ships[value.id].controls} 
-        send
+        connection := value.connection
+        send_data(&connection, temp[:])
       }
     }
     else {
-      game.connections[receiver.name] = receiver
+      game.connections[received.name] = received
+      send_data(&received.connection, []u8{ship_index, 1})
+      ship_index += 1
     }
   } else {
 
     //Send your ships controls to server
-    data := []u8{transmute(u8)ships[0].controls} 
+    data := []u8{ship_index, transmute(u8)ships[ship_index].controls} 
     send_data(game.connection, data)
 
-    received := receive_data(game.connection, temp[:]) 
-    if received.name in game.connections {
-      for key, value in game.connections {
-        ships[value].controls = transmute(Controls)(temp[0])
-      }
-  }
-    for ship in ships {
+    received := receive_data(game.connection, temp[:])
+    if temp[0] > u8(len(ships)-1) {
+      append(&ships, create_ship(&game.view))
+      init_ship(ships[temp[0]])
+    }
+    if ship_index != temp[0] {
+      ships[temp[0]].controls = transmute(Controls)(temp[1])
+    }
+    fmt.println(ship_index)
+
+    for ship, i in ships {
       update_astroids(&game.astroids, ship, curTime, &game.view)
       update_ship(ship, &game.view)
       if Controls_enum.shoot in ship.controls do shoot_bullet(ship, curTime)
       if Controls_enum.exit  in ship.controls do game.is_running = false
     }
   }
+}
 
 render :: proc() {
 
-  draw_ship(ships[0], NEON_GREEN, &game.view)
-  draw_bullets(&ships[0].bullets, NEON_YELLOW, &game.view)
+  for ship in ships {
+    draw_ship(ship, NEON_GREEN, &game.view)
+    draw_bullets(&ship.bullets, NEON_YELLOW, &game.view)
+  }
   draw_astroids(&game.astroids, NEON_RED, &game.view)
   render_color_buffer(game.renderer, &game.view)
   clear_color_buffer(0xFF121212, &game.view)
