@@ -31,7 +31,8 @@ Ship :: struct {
   shot_time:      u32 
   invuln_time:    u32 
   invuln_length:  u32 
-  controls : Controls
+  controls :      Controls
+  id:             u8
 }
 
 
@@ -41,7 +42,7 @@ Bullet :: struct {
   size:     int 
 }
 
-create_ship :: proc(view: ^View, positioni := Vector2d{1000,1000}) -> ^Ship {
+create_ship :: proc() -> ^Ship {
   ship := new(Ship)
   init_ship(ship)
   return ship
