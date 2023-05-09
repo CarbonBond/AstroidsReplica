@@ -255,6 +255,9 @@ update :: proc(prevTime: ^u32){
     }
 
     for ship, i in ships {
+      if i == 0 {
+        fmt.println(ship.position)
+      }
       update_astroids(&game.astroids, ship, curTime, &game.view)
       update_ship(ship, &game.view)
       if Controls_enum.shoot in ship.controls do shoot_bullet(ship, curTime)
