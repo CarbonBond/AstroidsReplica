@@ -10,6 +10,8 @@ import rand "core:math/rand"
 //Constants
 WINDOW_FLAGS :: SDL.WINDOW_SHOWN + SDL.WINDOW_BORDERLESS
 RENDER_FLAGS :: SDL.RENDERER_ACCELERATED
+
+//How fast game should run in milliseconds.
 FPS          :: 60
 TARGET_DT    :: 1000 / FPS
 
@@ -19,6 +21,8 @@ NEON_GREEN   :: 0xFFAAFFAA
 NEON_RED     :: 0xFFFFAAAA
 NEON_YELLOW  :: 0xFFFFFFAA
 
+//TODO(Carbon): Change to a compiled port then to a UI interface.
+//Loopback
 ADDRESS :: "127.0.0.1"
 PORT :: 7777
 
@@ -52,6 +56,7 @@ ships : [dynamic]^Ship
 game := Game{}
 
 main :: proc() {
+  //TODO(Carbon): Change to be set during the "join screen"
   rand.set_global_seed(0xFFFFFFFF)
 
   setup()
@@ -216,6 +221,8 @@ process_input :: proc(event: ^SDL.Event) {
 }
 
 update :: proc(prevTime: ^u32){
+
+  //Make game run as close to 60fps as possible
   curTime  := SDL.GetTicks()
   waitTime := TARGET_DT - (curTime - prevTime^);
   if(waitTime > 0 && waitTime <= TARGET_DT) do SDL.Delay(waitTime)
@@ -225,16 +232,19 @@ update :: proc(prevTime: ^u32){
     rec_data : [2]u8
     received := receive_data(game.connection, rec_data[:] )
     if received.name in game.connections {
+      //Send ship data to all clients
       for key, value in game.connections {
         connection := value.connection
         if (rec_data[1] & 0b100000) == 0b100000 do game.is_running = false
         send_data(&connection, rec_data[:])
       }
+      //TODO(Carbon): Add controls + time to a list
     }
     else {
       game.connections[received.name] = received
       send_data(&received.connection, []u8{ship_index, 1})
       ship_index += 1
+      //TODO(Carbon): Simulate all the current moves so its caught up.
     }
   } else {
 
@@ -244,12 +254,15 @@ update :: proc(prevTime: ^u32){
 
     ship_data : [2]u8
     received := receive_data(game.connection, ship_data[:])
+
+    //Create ships if there is a new connection
     if ship_data[0] == u8(len(ships)) {
       append(&ships, create_ship())
       ships[ship_data[0]].id = ship_data[0]
       init_ship(ships[ship_data[0]])
     }
 
+    //Set multiplayer ships to correct data.
     if ship_index != ship_data[0] {
       ships[ship_data[0]].controls = transmute(Controls)ship_data[1]
     }
